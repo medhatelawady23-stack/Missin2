@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}{% if object %}تعديل نوع موقع{% else %}نوع موقع جديد{% endif %}{% endblock %}
+{% block content %}
+<div class="container" style="max-width:560px;">
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <a href="{% url 'dashboard:locationtype_list' %}" class="btn btn-outline-secondary rounded-pill"><i class="fas fa-arrow-right"></i></a>
+        <h1 class="section-title mb-0">{% if object %}تعديل: {{ object.name }}{% else %}نوع موقع جديد{% endif %}</h1>
+    </div>
+    <div class="card-modern p-4">
+        <form method="post">{% csrf_token %}
+            {% for field in form %}
+            <div class="mb-3"><label class="form-label">{{ field.label }}</label>{{ field }}
+                {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+            </div>{% endfor %}
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary-custom"><i class="fas fa-save me-1"></i>حفظ</button>
+                <a href="{% url 'dashboard:locationtype_list' %}" class="btn btn-outline-secondary" style="border-radius:10px;">إلغاء</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

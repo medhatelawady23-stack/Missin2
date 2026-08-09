@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}إدارة المواقع - لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1200px;">
+    
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="section-title mb-1"><i class="fas fa-map-marker-alt text-primary me-2"></i>إدارة المواقع</h1>
+            <p class="text-muted mb-0">ربط المواقع بوحدات التنسيق وتصنيفات المواقع المخصصة</p>
+        </div>
+        <a href="{% url 'dashboard:location_create' %}" class="btn btn-primary-custom rounded-pill px-4 py-2 shadow-sm">
+            <i class="fas fa-plus-circle me-1"></i>إضافة موقع جديد
+        </a>
+    </div>
+
+    <!-- Search & Filter Card -->
+    <form method="get" class="card-modern p-3 mb-4">
+        <div class="row g-2 align-items-center">
+            <div class="col-12 col-md-5">
+                <input type="text" name="q" value="{{ request.GET.q }}" class="form-control" placeholder="ابحث باسم الموقع...">
+            </div>
+            <div class="col-6 col-md-3">
+                <select name="unit" class="form-select" onchange="this.form.submit()">
+                    <option value="">كل وحدات التنسيق</option>
+                    {% for u in units %}
+                    <option value="{{ u.id }}" {% if request.GET.unit == u.id|stringformat:'s' %}selected{% endif %}>{{ u.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <select name="type" class="form-select" onchange="this.form.submit()">
+                    <option value="">كل تصنيفات المواقع</option>
+                    {% for t in location_types %}
+                    <option value="{{ t.id }}" {% if request.GET.type == t.id|stringformat:'s' %}selected{% endif %}>{{ t.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-12 col-md-1 d-flex gap-1">
+                <button type="submit" class="btn btn-primary-custom flex-fill"><i class="fas fa-search"></i></button>
+                {% if request.GET.q or request.GET.unit or request.GET.type %}
+                <a href="{% url 'dashboard:location_list' %}" class="btn btn-outline-secondary flex-fill"><i class="fas fa-times"></i></a>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+
+    <div class="card-modern">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">اسم الموقع</th>
+                        <th>وحدة التنسيق</th>
+                        <th>تصنيف الموقع</th>
+                        <th>الحالة</th>
+                        <th>تاريخ الإضافة</th>
+                        <th class="text-center">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loc in locations %}
+                    <tr>
+                        <td class="ps-4">
+                            <span class="fw-700 text-primary fs-6">{{ loc.name }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info text-dark rounded-pill px-3 py-2">
+                                <i class="fas fa-building me-1"></i>{{ loc.unit.name }}
+                            </span>
+                        </td>
+                        <td><span class="fw-600">{{ loc.location_type.name }}</span></td>
+                        <td>
+                            {% if loc.is_active %}
+                            <span class="badge bg-success-subtle text-success border border-success rounded-pill px-3 py-1">نشط</span>
+                            {% else %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-3 py-1">غير نشط</span>
+                            {% endif %}
+                        </td>
+                        <td><small class="text-muted"><i class="fas fa-calendar me-1"></i>{{ loc.created_at|date:"Y-m-d" }}</small></td>
+                        <td class="text-center">
+                            <div class="btn-group">
+                                <a href="{% url 'dashboard:location_edit' loc.pk %}" class="btn btn-sm btn-outline-primary rounded-start-pill px-3" title="تعديل">
+                                    <i class="fas fa-edit me-1"></i>تعديل
+                                </a>
+                                <a href="{% url 'dashboard:location_delete' loc.pk %}" class="btn btn-sm btn-outline-danger rounded-end-pill px-3" title="حذف">
+                                    <i class="fas fa-trash me-1"></i>حذف
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-5">
+                            <i class="fas fa-map-location-dot fa-3x mb-3 opacity-50"></i>
+                            <p class="mb-0 fw-600">لا توجد مواقع مسجلة</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+    <nav class="mt-4 d-flex justify-content-center">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&unit={{ request.GET.unit }}&type={{ request.GET.type }}">السابق</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }} (إجمالي {{ page_obj.paginator.count }})</span></li>
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&unit={{ request.GET.unit }}&type={{ request.GET.type }}">التالي</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}البنود التفصيلية - لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1200px">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h1 class="section-title mb-1">
+        <i class="fas fa-list-check text-primary me-2"></i>إدارة البنود التفصيلية
+      </h1>
+      <p class="text-muted mb-0">
+        تعيين وتحديد البنود الفرعية الفرعية المنبثقة التابعة لكل نوع عمل
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'dashboard:worktype_list' %}" class="btn btn-outline-secondary rounded-pill px-3">
+        <i class="fas fa-briefcase me-1"></i>إدارة أنواع العمل
+      </a>
+      <a href="{% url 'dashboard:workitem_create' %}" class="btn btn-primary-custom rounded-pill px-4 py-2 shadow-sm">
+        <i class="fas fa-plus-circle me-1"></i>إضافة بند تفصيلي جديد
+      </a>
+    </div>
+  </div>
+
+  <!-- Search & Filter Bar -->
+  <form method="get" class="card-modern p-3 mb-4">
+    <div class="row g-3 align-items-center">
+      <div class="col-12 col-md-5">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
+          <input type="text" name="q" value="{{ request.GET.q }}" class="form-control border-start-0 ps-0" placeholder="ابحث باسم البند التفصيلي...">
+        </div>
+      </div>
+      <div class="col-12 col-md-5">
+        <select name="work_type" class="form-select" onchange="this.form.submit()">
+          <option value="">-- جميع أنواع العمل --</option>
+          {% for wt in work_types %}
+          <option value="{{ wt.id }}" {% if request.GET.work_type == wt.id|stringformat:"i" %}selected{% endif %}>{{ wt.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary-custom w-100">بحث</button>
+        {% if request.GET.q or request.GET.work_type %}
+        <a href="{% url 'dashboard:workitem_list' %}" class="btn btn-outline-secondary"><i class="fas fa-times"></i></a>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+
+  <!-- Table -->
+  <div class="card-modern overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4" style="width: 70px">#</th>
+            <th>نوع العمل (الأب)</th>
+            <th>البند التفصيلي</th>
+            <th>الحالة</th>
+            <th>تاريخ الإنشاء</th>
+            <th class="text-center">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for wi in work_items %}
+          <tr>
+            <td class="ps-4 fw-600 text-muted">{{ forloop.counter }}</td>
+            <td>
+              <span class="badge bg-primary-subtle text-primary border border-primary rounded-pill px-3 py-1 fw-700">
+                <i class="fas fa-briefcase me-1"></i>{{ wi.work_type.name }}
+              </span>
+            </td>
+            <td>
+              <span class="fw-700 text-dark fs-6">{{ wi.name }}</span>
+            </td>
+            <td>
+              {% if wi.is_active %}
+              <span class="badge bg-success-subtle text-success border border-success rounded-pill px-3 py-1">
+                <i class="fas fa-check-circle me-1"></i>نشط
+              </span>
+              {% else %}
+              <span class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-3 py-1">
+                <i class="fas fa-times-circle me-1"></i>غير نشط
+              </span>
+              {% endif %}
+            </td>
+            <td>
+              <small class="text-muted"><i class="fas fa-calendar me-1"></i>{{ wi.created_at|date:"Y-m-d H:i" }}</small>
+            </td>
+            <td class="text-center">
+              <div class="btn-group">
+                <a href="{% url 'dashboard:workitem_edit' wi.pk %}" class="btn btn-sm btn-outline-primary rounded-start-pill px-3" title="تعديل">
+                  <i class="fas fa-edit me-1"></i>تعديل
+                </a>
+                <a href="{% url 'dashboard:workitem_delete' wi.pk %}" class="btn btn-sm btn-outline-danger rounded-end-pill px-3" title="حذف">
+                  <i class="fas fa-trash me-1"></i>حذف
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center py-5 text-muted">
+              <i class="fas fa-list-check fa-3x mb-3 opacity-50 text-warning"></i>
+              <p class="mb-0 fw-600">لا توجد بنود تفصيلية مضافة حتى الآن</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

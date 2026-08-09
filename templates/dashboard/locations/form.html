@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}{% if object %}تعديل موقع{% else %}إضافة موقع جديد{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:600px;">
+    
+    <div class="d-flex align-items-center mb-4 gap-3">
+        <a href="{% url 'dashboard:location_list' %}" class="btn btn-outline-secondary rounded-circle" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-arrow-right"></i>
+        </a>
+        <div>
+            <h1 class="section-title mb-0">{% if object %}تعديل موقع: {{ object.name }}{% else %}إضافة موقع جديد{% endif %}</h1>
+            <small class="text-muted">قم بتنسيق حقول الموقع حسب الترتيب المعتمد</small>
+        </div>
+    </div>
+
+    <div class="card-modern p-4">
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- 1. Unit Selection -->
+            <div class="mb-3">
+                <label class="form-label fw-700">1. اختيار وحدة التنسيق <span class="text-danger">*</span></label>
+                <select name="unit" class="form-select form-select-lg" required>
+                    <option value="">-- اختر وحدة التنسيق --</option>
+                    {% for choice in form.unit.field.queryset %}
+                    <option value="{{ choice.pk }}" {% if form.unit.value|stringformat:'s' == choice.pk|stringformat:'s' %}selected{% endif %}>
+                        {{ choice.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if form.unit.errors %}
+                <div class="text-danger small mt-1">{{ form.unit.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- 2. Location Type Selection -->
+            <div class="mb-3">
+                <label class="form-label fw-700">2. اختيار تصنيف الموقع <span class="text-danger">*</span></label>
+                <select name="location_type" class="form-select form-select-lg" required>
+                    <option value="">-- اختر تصنيف الموقع --</option>
+                    {% for choice in form.location_type.field.queryset %}
+                    <option value="{{ choice.pk }}" {% if form.location_type.value|stringformat:'s' == choice.pk|stringformat:'s' %}selected{% endif %}>
+                        {{ choice.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% if form.location_type.errors %}
+                <div class="text-danger small mt-1">{{ form.location_type.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- 3. Location Name -->
+            <div class="mb-4">
+                <label class="form-label fw-700">3. اسم الموقع <span class="text-danger">*</span></label>
+                <input type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-control form-control-lg" placeholder="أدخل اسم الموقع هنا..." required>
+                {% if form.name.errors %}
+                <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Active Status -->
+            <div class="mb-4 form-check form-switch">
+                <input type="checkbox" name="is_active" class="form-check-input" id="isActiveCheck" {% if form.is_active.value or not object %}checked{% endif %}>
+                <label class="form-check-label fw-600" for="isActiveCheck">موقع نشط (يظهر للموظفين)</label>
+            </div>
+
+            <div class="d-flex gap-2 pt-2 border-top">
+                <button type="submit" class="btn btn-primary-custom rounded-pill px-4 py-2">
+                    <i class="fas fa-save me-1"></i>حفظ الموقع
+                </button>
+                <a href="{% url 'dashboard:location_list' %}" class="btn btn-outline-secondary rounded-pill px-4 py-2">إلغاء</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,161 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل دخول الإدارة - نظام التقارير الميدانية</title>
+    <!-- Bootstrap 5 RTL -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Google Fonts - Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+        .container-wrapper {
+            width: 100%;
+            max-width: 480px;
+        }
+        .login-card {
+            background: linear-gradient(135deg, #0d253f 0%, #134074 60%, #1d4ed8 100%);
+            border-radius: 26px;
+            box-shadow: 0 25px 65px rgba(13, 37, 63, 0.28);
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        .btn-admin-login {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #ffffff;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 14px;
+            padding: 0.85rem;
+            font-weight: 800;
+            font-size: 1.15rem;
+            width: 100%;
+            transition: all 0.25s ease;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4);
+        }
+        .btn-admin-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 32px rgba(37, 99, 235, 0.55);
+            color: #ffffff;
+        }
+        .form-control {
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            border: none;
+            background-color: #ffffff !important;
+            color: #1e293b !important;
+            font-size: 1.05rem;
+        }
+        .form-control:focus {
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.45);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-wrapper">
+
+    <!-- Unified Vibrant Deep Navy Executive Ticket -->
+    <div class="login-card">
+        
+        <!-- Light Navy Accent Top Bar -->
+        <div style="height: 5px; background: linear-gradient(90deg, #60a5fa, #3b82f6, #1d4ed8);"></div>
+
+        <div class="p-4 p-md-4">
+            
+            <!-- Logos Row (Inside Ticket Header) -->
+            <div class="d-flex align-items-center justify-content-between mb-4 px-1 gap-2 border-bottom pb-3" style="border-color: rgba(255,255,255,0.14) !important;">
+                <!-- Right: Amana Transparent White Logo -->
+                <img src="{% static 'images/amana_logo_clean_white.png' %}" alt="شعار أمانة منطقة الرياض" style="max-height: 48px; max-width: 175px; object-fit: contain;">
+                
+                <!-- Left: Company Transparent White Logo (Enlarged) -->
+                <img src="{% static 'images/company_logo_clean_white.png' %}" alt="شعار الشركة الاستشارية" style="max-height: 68px; max-width: 210px; object-fit: contain;">
+            </div>
+
+            <!-- Title Badge -->
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow"
+                     style="width: 64px; height: 64px; background: rgba(96, 165, 250, 0.18); backdrop-filter: blur(10px); border: 1px solid rgba(96, 165, 250, 0.35);">
+                    <i class="fas fa-user-shield fa-2x" style="color: #93c5fd;"></i>
+                </div>
+                <h3 class="text-white fw-800 mb-2" style="font-size: 1.55rem;">لوحة الإدارة والتفتيش والرقابة</h3>
+                <div class="text-white-50 small mt-2 pt-2 border-top lh-base" style="font-size: 0.88rem; border-color: rgba(255,255,255,0.14) !important;">
+                    <div class="fw-700 text-white mb-1" style="font-size: 0.95rem;">قطاع الوسط</div>
+                    <div class="mb-1 text-white-50">إدارة صيانة الحدائق والمنتزهات</div>
+                    <div class="mb-1 text-white-50">الاستشاري / شركة مشاري الشثري</div>
+                    <div class="text-white-50">مدير المشروع / م . مدحت العوضي</div>
+                </div>
+            </div>
+
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-danger py-2.5 small mb-3 border-0 bg-danger text-white rounded-3">
+                <i class="fas fa-exclamation-circle me-1"></i>{{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% if form.errors %}
+            <div class="alert alert-danger py-2.5 small mb-3 border-0 bg-danger text-white rounded-3">
+                <i class="fas fa-exclamation-triangle me-1"></i>اسم المستخدم أو كلمة المرور غير صحيحة
+            </div>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label fw-700 text-white-50 small mb-2"><i class="fas fa-user me-1" style="color: #93c5fd;"></i>اسم المستخدم</label>
+                    <input type="text" name="username" class="form-control" placeholder="أدخل اسم المستخدم..." required autofocus>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-700 text-white-50 small mb-2"><i class="fas fa-lock me-1" style="color: #93c5fd;"></i>كلمة المرور</label>
+                    <div class="input-group">
+                        <input type="password" name="password" id="admin_password" class="form-control border-end-0" style="border-top-right-radius: 12px; border-bottom-right-radius: 12px;" placeholder="أدخل كلمة المرور..." required>
+                        <button class="btn bg-white border-0 text-muted px-3" type="button" id="toggleAdminPassword" style="border-top-left-radius: 12px; border-bottom-left-radius: 12px;">
+                            <i class="fas fa-eye" id="adminToggleIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-admin-login mb-2">
+                    <i class="fas fa-right-to-bracket me-2"></i>الدخول للوحة التحكم
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <p class="text-center text-muted mt-4 small fw-600">
+        جميع الحقوق محفوظة &copy; 2026 Crafted with care by CE.Majid Alaliani
+    </p>
+</div>
+
+<script>
+document.getElementById('toggleAdminPassword').addEventListener('click', function() {
+    const pwd = document.getElementById('admin_password');
+    const icon = document.getElementById('adminToggleIcon');
+    if (pwd.type === 'password') {
+        pwd.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        pwd.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+});
+</script>
+
+</body>
+</html>

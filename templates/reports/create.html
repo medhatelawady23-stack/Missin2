@@ -1,0 +1,1250 @@
+{% extends 'base.html' %} {% block title %}إنشاء تقرير ميداني جديد{% endblock %}
+{% block extra_css %}
+<style>
+  .step-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  .step-card.locked {
+    opacity: 0.55;
+    pointer-events: none;
+    user-select: none;
+    filter: grayscale(0.2);
+  }
+  .category-selection-card {
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+  .category-selection-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+  }
+  .category-selection-card.selected-restroom {
+    border-color: #f59e0b !important;
+    background: linear-gradient(135deg, #fffbe3 0%, #ffffff 100%);
+    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.2) !important;
+  }
+  .category-selection-card.selected-openspace {
+    border-color: #10b981 !important;
+    background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.2) !important;
+  }
+  .step-header {
+    background: #f8fafc;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .step-number {
+    width: 38px;
+    height: 38px;
+    background: var(--primary-color, #1a5276);
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+  .step-title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1e293b;
+  }
+  .note-item-card {
+    background: #ffffff;
+    border: 2px dashed #cbd5e1;
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+    transition: border-color 0.3s;
+  }
+  .note-item-card:hover {
+    border-color: var(--primary-color, #1a5276);
+  }
+  .photo-box {
+    width: 100px;
+    height: 100px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 2px solid #e2e8f0;
+  }
+  .btn-camera {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px dashed #0284c7;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 0.6rem 1.2rem;
+    transition: all 0.2s;
+  }
+  .btn-camera:hover {
+    background: #0284c7;
+    color: #ffffff;
+  }
+  .gps-badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="container-fluid" style="max-width: 900px">
+  <!-- User Header Info -->
+  <div
+    class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2"
+  >
+    <div>
+      <h1 class="section-title mb-1">
+        <i class="fas fa-file-signature me-2 text-primary"></i>رفع تقرير ميداني
+        جديد
+      </h1>
+      {% if user_unit %}
+      <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill">
+        <i class="fas fa-building me-1"></i>وحدة التنسيق: {{ user_unit.name }}
+      </span>
+      {% else %}
+      <span class="badge bg-danger fs-6 px-3 py-2 rounded-pill">
+        <i class="fas fa-exclamation-triangle me-1"></i>حسابك غير مرتبط بوحدة
+        تنسيق
+      </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <form id="reportForm" onsubmit="return false;">
+    {% csrf_token %}
+
+    <!-- STEP 0: Category Selection Cards (دورات المياه vs المساحات الانتشارية) -->
+    <div class="step-card mb-4 border-2">
+      <div class="step-header bg-white border-bottom-0 pb-0">
+        <div class="step-number bg-primary">
+          <i class="fas fa-layer-group"></i>
+        </div>
+        <div>
+          <h2 class="step-title">
+            حدد نوع التقرير الميداني أولاً
+            <span class="text-danger">* إجباري</span>
+          </h2>
+          <small class="text-muted"
+            >اختر فئة التقرير الميداني لتهيئة وتصفية قائمة المواقع والخيارات
+            المناسبة تلقائياً</small
+          >
+        </div>
+      </div>
+
+      <div class="p-4 pt-3">
+        <div class="row g-3">
+          <!-- Card 1: Restroom Report -->
+          <div class="col-12 col-md-6">
+            <div
+              class="category-selection-card text-center text-md-start h-100 d-flex flex-column justify-content-between p-4"
+              id="cardCatRestroom"
+              onclick="selectReportCategory('restroom')"
+            >
+              <div>
+                <div
+                  class="d-flex align-items-center justify-content-between mb-3"
+                >
+                  <div
+                    class="category-icon-box bg-warning-subtle text-warning border border-warning-subtle rounded-3 p-3 fs-3"
+                  >
+                    <i class="fas fa-restroom"></i>
+                  </div>
+                  <span
+                    class="badge rounded-pill bg-light text-dark border px-3 py-2 fw-700"
+                    id="badgeCatRestroom"
+                  >
+                    <i class="far fa-circle me-1"></i>انقر للاختيار
+                  </span>
+                </div>
+                <h4 class="fw-800 text-dark mb-2">
+                  <i class="fas fa-toilet me-2 text-warning"></i>تقرير دورة مياه
+                </h4>
+                <p class="text-muted small mb-0">
+                  تسجيل ومتابعة أعمال النظافة والصيانة والملاحظات الخاصة
+                  بالمجمعات الصحية ودورات المياه.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Open Space / Site Report -->
+          <div class="col-12 col-md-6">
+            <div
+              class="category-selection-card text-center text-md-start h-100 d-flex flex-column justify-content-between p-4"
+              id="cardCatOpenSpace"
+              onclick="selectReportCategory('open_space')"
+            >
+              <div>
+                <div
+                  class="d-flex align-items-center justify-content-between mb-3"
+                >
+                  <div
+                    class="category-icon-box bg-success-subtle text-success border border-success-subtle rounded-3 p-3 fs-3"
+                  >
+                    <i class="fas fa-tree"></i>
+                  </div>
+                  <span
+                    class="badge rounded-pill bg-light text-dark border px-3 py-2 fw-700"
+                    id="badgeCatOpenSpace"
+                  >
+                    <i class="far fa-circle me-1"></i>انقر للاختيار
+                  </span>
+                </div>
+                <h4 class="fw-800 text-dark mb-2">
+                  <i class="fas fa-mountain-sun me-2 text-success"></i>تقرير
+                  مساحة انتشارية / موقع
+                </h4>
+                <p class="text-muted small mb-0">
+                  تسجيل ومتابعة الأعمال الميدانية في الطرق والساحات والحدائق
+                  والمواقع الانتشارية العامة.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <input type="hidden" id="selectedCategory" name="category" value="" />
+      </div>
+    </div>
+
+    <!-- STEP 1: GPS Location (Locked until Category Card is selected) -->
+    <div id="step1Card" class="step-card locked">
+      <div class="step-header">
+        <div class="step-number">1</div>
+        <div>
+          <h2 class="step-title">
+            الموقع الجغرافي (GPS)
+            <span class="text-danger">* يلزم تحديد نوع التقرير أولاً</span>
+          </h2>
+          <small class="text-muted"
+            >يجب تحديد موقعك الجغرافي بالـ GPS قبل البدء بتعبئة بيانات
+            التقرير</small
+          >
+        </div>
+      </div>
+      <div class="p-4">
+        <div
+          id="gpsStatus"
+          class="alert alert-secondary mb-0 d-flex align-items-center justify-content-between flex-wrap gap-2"
+        >
+          <div>
+            <i class="fas fa-lock me-2 text-warning"></i>
+            <span
+              >يرجى اختيار نوع التقرير أولاً بالضغط على إحدى البطاقتين أعلاه
+              لفتح خطوة الـ GPS والبدء.</span
+            >
+          </div>
+        </div>
+        <input type="hidden" id="latitude" name="latitude" />
+        <input type="hidden" id="longitude" name="longitude" />
+      </div>
+    </div>
+
+    <!-- STEP 2: Mandatory Location Photo (Locked until GPS is verified) -->
+    <div id="step2Card" class="step-card locked">
+      <div class="step-header">
+        <div class="step-number">2</div>
+        <div>
+          <h2 class="step-title">
+            صورة تحديد الموقع (إلزامية) <span class="text-danger">*</span>
+          </h2>
+          <small class="text-muted">التقاط صورة عامة للموقع الميداني</small>
+        </div>
+      </div>
+      <div class="p-4">
+        <div class="text-center">
+          <input
+            type="file"
+            id="locationPhotoInput"
+            accept="image/*"
+            capture="environment"
+            class="d-none"
+            onchange="uploadLocationPhoto(this)"
+          />
+          <button
+            type="button"
+            class="btn btn-camera btn-lg w-100"
+            onclick="document.getElementById('locationPhotoInput').click()"
+          >
+            <i class="fas fa-camera fa-lg me-2"></i>التقاط صورة تحديد الموقع
+          </button>
+          <input type="hidden" id="locationPhotoId" name="location_photo_id" />
+
+          <div id="locationPhotoPreview" class="mt-3 d-none">
+            <div class="position-relative d-inline-block">
+              <img
+                id="locationPhotoImg"
+                src=""
+                class="rounded-3 shadow-sm"
+                style="max-height: 220px; width: 100%; object-fit: cover"
+              />
+              <button
+                type="button"
+                class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 rounded-circle"
+                onclick="removeLocationPhoto()"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: Select Location (Locked until GPS is verified) -->
+    <div id="step3Card" class="step-card locked">
+      <div class="step-header">
+        <div class="step-number">3</div>
+        <div>
+          <h2 class="step-title">
+            بيانات الموقع <span class="text-danger">*</span>
+          </h2>
+          <small class="text-muted"
+            >اختر تصنيف الموقع واسم الموقع التابع لوحدتك</small
+          >
+        </div>
+      </div>
+      <div class="p-4">
+        <!-- Category Fast Switcher (تصفية دورات المياه vs المساحات الانتشارية) -->
+        <div
+          class="p-2 mb-3 bg-light rounded-3 border d-flex align-items-center justify-content-between flex-wrap gap-2"
+        >
+          <span class="fw-700 text-dark small ms-2"
+            ><i class="fas fa-filter text-primary me-1"></i>تصفية تصنيف
+            الموقع:</span
+          >
+          <div
+            class="btn-group btn-group-sm flex-fill"
+            style="max-width: 480px"
+          >
+            <button
+              type="button"
+              class="btn btn-primary fw-700 rounded-pill cat-filter-btn active me-1"
+              id="btnCatAll"
+              onclick="filterLocationTypes('all')"
+            >
+              <i class="fas fa-globe me-1"></i>جميع المواقع
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-warning text-dark fw-700 rounded-pill cat-filter-btn me-1"
+              id="btnCatRestroom"
+              onclick="filterLocationTypes('restroom')"
+            >
+              <i class="fas fa-restroom me-1"></i>دورات المياه
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-success text-dark fw-700 rounded-pill cat-filter-btn"
+              id="btnCatOpen"
+              onclick="filterLocationTypes('open_space')"
+            >
+              <i class="fas fa-tree me-1"></i>المساحات الانتشارية
+            </button>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          {% if user.is_staff or not user_unit %}
+          <div class="col-12 col-md-4">
+            <label class="form-label fw-700"
+              >وحدة التنسيق <span class="text-danger">*</span></label
+            >
+            <select
+              id="unitSelect"
+              class="form-select form-select-lg"
+              onchange="loadLocations()"
+              required
+            >
+              <option value="">-- اختر وحدة التنسيق --</option>
+              {% for u in units %}
+              <option
+                value="{{ u.id }}"
+                {%
+                if
+                user_unit
+                and
+                user_unit.id=""
+                ="u.id"
+                %}selected{%
+                endif
+                %}
+              >
+                {{ u.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label fw-700"
+              >تصنيف الموقع <span class="text-danger">*</span></label
+            >
+            <select
+              id="locationTypeSelect"
+              class="form-select form-select-lg"
+              onchange="loadLocations()"
+              required
+            >
+              <option value="">-- اختر تصنيف الموقع --</option>
+              {% for lt in location_types %}
+              <option value="{{ lt.id }}">{{ lt.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label fw-700"
+              >اسم الموقع <span class="text-danger">*</span></label
+            >
+            <select
+              id="locationSelect"
+              class="form-select form-select-lg"
+              disabled
+              required
+            >
+              <option value="">-- اختر تصنيف الموقع أولاً --</option>
+            </select>
+          </div>
+          {% else %}
+          <div class="col-12 col-md-6">
+            <label class="form-label fw-700"
+              >تصنيف الموقع <span class="text-danger">*</span></label
+            >
+            <select
+              id="locationTypeSelect"
+              class="form-select form-select-lg"
+              onchange="loadLocations()"
+              required
+            >
+              <option value="">-- اختر تصنيف الموقع --</option>
+              {% for lt in location_types %}
+              <option value="{{ lt.id }}">{{ lt.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label fw-700"
+              >اسم الموقع <span class="text-danger">*</span></label
+            >
+            <select
+              id="locationSelect"
+              class="form-select form-select-lg"
+              disabled
+              required
+            >
+              <option value="">-- اختر تصنيف الموقع أولاً --</option>
+            </select>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4: Dynamic Notes & Work Observations (Locked until GPS is verified) -->
+    <div id="step4Card" class="step-card locked">
+      <div
+        class="step-header d-flex justify-content-between align-items-center"
+      >
+        <div class="d-flex align-items-center gap-3">
+          <div class="step-number">4</div>
+          <div>
+            <h2 class="step-title">
+              {{ step4_title }}
+              <span class="text-danger"
+                >* يلزم إضافة {{ item_label_singular }} واحد على الأقل</span
+              >
+            </h2>
+            <small class="text-muted">{{ step4_subtitle }}</small>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn btn-primary-custom rounded-pill"
+          onclick="addNoteItem()"
+        >
+          <i class="fas fa-plus me-1"></i>{{ add_item_btn_text }}
+        </button>
+      </div>
+      <div class="p-4">
+        <!-- Container for Dynamic Note Items -->
+        <div id="notesContainer"></div>
+
+        <!-- Empty State Message -->
+        <div id="emptyNotesMsg" class="text-center py-4 text-muted">
+          <i class="fas fa-folder-open fa-3x mb-3 text-warning opacity-75"></i>
+          <p class="mb-2 fw-600">{{ empty_notes_title }}</p>
+          <small class="d-block mb-3">{{ empty_notes_subtitle }}</small>
+          <button
+            type="button"
+            class="btn btn-outline-primary rounded-pill btn-sm"
+            onclick="addNoteItem()"
+          >
+            <i class="fas fa-plus me-1"></i>{{ add_item_btn_text }} جديد الان
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit Section -->
+    <div
+      id="submitCard"
+      class="card-modern p-4 text-center mb-5 opacity-50"
+      style="pointer-events: none"
+    >
+      <button
+        type="submit"
+        id="submitBtn"
+        class="btn btn-accent btn-lg px-5 py-3 rounded-pill fs-5 fw-700 shadow"
+        onclick="submitReport()"
+      >
+        <i class="fas fa-paper-plane me-2"></i>إرسال التقرير الميداني
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %} {% block extra_js %}
+<script id="work-types-data" type="application/json">
+  {{ work_types_json|safe }}
+</script>
+<script id="work-elements-data" type="application/json">
+  {{ work_elements_json|safe }}
+</script>
+<script id="work-activities-data" type="application/json">
+  {{ work_activities_json|safe }}
+</script>
+<script>
+  let noteItemCounter = 0;
+  const itemLabelSingular = "{{ item_label_singular|default:'نشاط' }}";
+  const itemLabelPlural = "{{ item_label_plural|default:'أنشطة' }}";
+  const addItemBtnText = "{{ add_item_btn_text|default:'إضافة نشاط' }}";
+
+  // Pre-loaded 3-level work hierarchy options
+  const workTypesData = JSON.parse(
+    document.getElementById("work-types-data").textContent || "[]",
+  );
+  const workElementsData = JSON.parse(
+    document.getElementById("work-elements-data").textContent || "[]",
+  );
+  const workActivitiesData = JSON.parse(
+    document.getElementById("work-activities-data").textContent || "[]",
+  );
+
+  document.addEventListener("DOMContentLoaded", () => {
+    // Report steps remain locked until the user selects a category card
+  });
+
+  // Select Report Category Cards (دورات المياه vs المساحات الانتشارية)
+  function selectReportCategory(category) {
+    const selectedInput = document.getElementById("selectedCategory");
+    if (selectedInput) selectedInput.value = category;
+
+    const cardRestroom = document.getElementById("cardCatRestroom");
+    const cardOpenSpace = document.getElementById("cardCatOpenSpace");
+    const badgeRestroom = document.getElementById("badgeCatRestroom");
+    const badgeOpenSpace = document.getElementById("badgeCatOpenSpace");
+
+    if (cardRestroom) cardRestroom.classList.remove("selected-restroom");
+    if (cardOpenSpace) cardOpenSpace.classList.remove("selected-openspace");
+
+    if (category === "restroom") {
+      if (cardRestroom) cardRestroom.classList.add("selected-restroom");
+      if (badgeRestroom) {
+        badgeRestroom.className =
+          "badge rounded-pill bg-warning text-dark px-3 py-2 fw-700 shadow-sm";
+        badgeRestroom.innerHTML =
+          '<i class="fas fa-check-circle me-1"></i>تم الاختيار (دورة مياه)';
+      }
+      if (badgeOpenSpace) {
+        badgeOpenSpace.className =
+          "badge rounded-pill bg-light text-muted border px-3 py-2 fw-700";
+        badgeOpenSpace.innerHTML =
+          '<i class="far fa-circle me-1"></i>تغيير إلى هذا النوع';
+      }
+    } else if (category === "open_space") {
+      if (cardOpenSpace) cardOpenSpace.classList.add("selected-openspace");
+      if (badgeOpenSpace) {
+        badgeOpenSpace.className =
+          "badge rounded-pill bg-success text-white px-3 py-2 fw-700 shadow-sm";
+        badgeOpenSpace.innerHTML =
+          '<i class="fas fa-check-circle me-1"></i>تم الاختيار (مساحة انتشارية)';
+      }
+      if (badgeRestroom) {
+        badgeRestroom.className =
+          "badge rounded-pill bg-light text-muted border px-3 py-2 fw-700";
+        badgeRestroom.innerHTML =
+          '<i class="far fa-circle me-1"></i>تغيير إلى هذا النوع';
+      }
+    }
+
+    // 1. Unlock Step 1 (GPS)
+    const step1 = document.getElementById("step1Card");
+    if (step1) step1.classList.remove("locked");
+
+    // 2. Filter Location Types Dropdown
+    filterLocationTypes(category);
+
+    // 3. Request GPS location
+    const lat = document.getElementById("latitude").value;
+    if (!lat) {
+      requestGPS();
+    }
+  }
+
+  // Unlock Form Steps after successful GPS capture
+  function unlockFormSteps() {
+    document.getElementById("step2Card").classList.remove("locked");
+    document.getElementById("step3Card").classList.remove("locked");
+    document.getElementById("step4Card").classList.remove("locked");
+    const submitCard = document.getElementById("submitCard");
+    submitCard.classList.remove("opacity-50");
+    submitCard.style.pointerEvents = "auto";
+  }
+
+  // GPS Request (Mandatory First Step)
+  function requestGPS() {
+    const statusDiv = document.getElementById("gpsStatus");
+    statusDiv.className =
+      "alert alert-warning mb-0 d-flex align-items-center justify-content-between flex-wrap gap-2";
+    statusDiv.innerHTML = `
+        <div><i class="fas fa-spinner fa-spin me-2"></i>جاري تحديد موقعك الجغرافي (GPS)...</div>
+        <button type="button" class="btn btn-sm btn-outline-dark rounded-pill" onclick="requestGPS()"><i class="fas fa-rotate me-1"></i>تحديث</button>
+    `;
+
+    if (!navigator.geolocation) {
+      statusDiv.className = "alert alert-danger mb-0";
+      statusDiv.innerHTML =
+        '<i class="fas fa-times-circle me-2"></i>متصفحك لا يدعم خاصية تحديد الموقع (GPS)';
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        document.getElementById("latitude").value = pos.coords.latitude;
+        document.getElementById("longitude").value = pos.coords.longitude;
+
+        statusDiv.className =
+          "alert alert-success mb-0 d-flex align-items-center justify-content-between flex-wrap gap-2";
+        statusDiv.innerHTML = `
+                <div>
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>تم تحديد الموقع الجغرافي بنجاح:</strong> الإحداثيات (${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)})
+                </div>
+                <span class="badge bg-success gps-badge"><i class="fas fa-location-dot me-1"></i>GPS نشط</span>
+            `;
+
+        // Unlock remaining report steps
+        unlockFormSteps();
+      },
+      (err) => {
+        statusDiv.className =
+          "alert alert-danger mb-0 d-flex align-items-center justify-content-between flex-wrap gap-2";
+        statusDiv.innerHTML = `
+                <div><i class="fas fa-exclamation-triangle me-2"></i>تعذر الحصول على الموقع الجغرافي (GPS). يرجى تفعيل خدمة الموقع في جهازك والسماح للمتصفح بالوصول للموقع، ثم الضغط على إعادة المحاولة.</div>
+                <div>
+                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill fw-bold" onclick="requestGPS()"><i class="fas fa-rotate me-1"></i>إعادة المحاولة</button>
+                </div>
+            `;
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 },
+    );
+  }
+
+  // Upload Location Photo
+  async function uploadLocationPhoto(input) {
+    if (!input.files || !input.files[0]) return;
+
+    const file = input.files[0];
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch("/reports/upload-image/", {
+        method: "POST",
+        headers: { "X-CSRFToken": getCsrfToken() },
+        body: formData,
+      });
+      const res = await response.json();
+      if (res.success) {
+        document.getElementById("locationPhotoId").value = res.image_id;
+        document.getElementById("locationPhotoImg").src = res.image_url;
+        document
+          .getElementById("locationPhotoPreview")
+          .classList.remove("d-none");
+      } else {
+        alert("خطأ أثناء رفع صورة الموقع: " + (res.error || "حدث خطأ"));
+      }
+    } catch (e) {
+      alert("حدث خطأ في الاتصال أثناء رفع الصورة");
+    }
+  }
+
+  function removeLocationPhoto() {
+    document.getElementById("locationPhotoId").value = "";
+    document.getElementById("locationPhotoInput").value = "";
+    document.getElementById("locationPhotoPreview").classList.add("d-none");
+  }
+
+  // Load Locations by LocationType & Unit
+  async function loadLocations() {
+    const typeId = document.getElementById("locationTypeSelect").value;
+    const unitElem = document.getElementById("unitSelect");
+    const unitId = unitElem ? unitElem.value : "";
+    const locSelect = document.getElementById("locationSelect");
+
+    if (!typeId) {
+      locSelect.innerHTML =
+        '<option value="">-- اختر تصنيف الموقع أولاً --</option>';
+      locSelect.disabled = true;
+      return;
+    }
+
+    locSelect.disabled = true;
+    locSelect.innerHTML = '<option value="">جاري تحميل المواقع...</option>';
+
+    let fetchUrl = `/locations/api/locations/?type_id=${typeId}`;
+    if (unitId) {
+      fetchUrl += `&unit_id=${unitId}`;
+    }
+
+    try {
+      const res = await fetch(fetchUrl);
+      const data = await res.json();
+      const locations = data.locations || data;
+
+      if (!locations || locations.length === 0) {
+        locSelect.innerHTML =
+          '<option value="">لا توجد مواقع تابعة لوحدتك في هذا التصنيف</option>';
+        return;
+      }
+
+      let options = '<option value="">-- اختر الموقع --</option>';
+      locations.forEach((loc) => {
+        options += `<option value="${loc.id}">${loc.name}</option>`;
+      });
+      locSelect.innerHTML = options;
+      locSelect.disabled = false;
+    } catch (e) {
+      locSelect.innerHTML = '<option value="">خطأ في تحميل المواقع</option>';
+    }
+  }
+
+  // Filter Location Types by Category (دورات المياه vs المساحات الانتشارية)
+  function filterLocationTypes(category) {
+    const btnAll = document.getElementById("btnCatAll");
+    const btnRestroom = document.getElementById("btnCatRestroom");
+    const btnOpen = document.getElementById("btnCatOpen");
+
+    [btnAll, btnRestroom, btnOpen].forEach((btn) => {
+      if (!btn) return;
+      btn.classList.remove(
+        "btn-primary",
+        "btn-warning",
+        "btn-success",
+        "text-white",
+        "active",
+      );
+      btn.classList.add("btn-outline-secondary", "text-dark");
+    });
+
+    if (category === "restroom") {
+      if (btnRestroom) {
+        btnRestroom.classList.remove("btn-outline-secondary", "text-dark");
+        btnRestroom.classList.add("btn-warning", "text-white", "active");
+      }
+    } else if (category === "open_space") {
+      if (btnOpen) {
+        btnOpen.classList.remove("btn-outline-secondary", "text-dark");
+        btnOpen.classList.add("btn-success", "text-white", "active");
+      }
+    } else {
+      if (btnAll) {
+        btnAll.classList.remove("btn-outline-secondary", "text-dark");
+        btnAll.classList.add("btn-primary", "text-white", "active");
+      }
+    }
+
+    const select = document.getElementById("locationTypeSelect");
+    if (!select) return;
+    const options = select.querySelectorAll("option");
+
+    let firstRestroomOptVal = "";
+    options.forEach((opt) => {
+      if (!opt.value) return;
+      const text = opt.textContent || "";
+      const isRestroom =
+        text.includes("دورة") || text.includes("مياه") || text.includes("حمام");
+
+      if (category === "restroom") {
+        opt.hidden = !isRestroom;
+        if (isRestroom && !firstRestroomOptVal) {
+          firstRestroomOptVal = opt.value;
+        }
+      } else if (category === "open_space") {
+        opt.hidden = isRestroom;
+      } else {
+        opt.hidden = false;
+      }
+    });
+
+    if (category === "restroom") {
+      // Restrooms: Auto-select and lock the single type
+      if (firstRestroomOptVal) {
+        select.value = firstRestroomOptVal;
+      } else {
+        select.value = "";
+      }
+      select.disabled = true;
+      select.classList.add("bg-light");
+      loadLocations();
+    } else {
+      // Open Space / Sites: Unlock dropdown so the user can choose from available sub-types (مواقف / مساحات انتشارية)
+      select.value = "";
+      select.disabled = false;
+      select.classList.remove("bg-light");
+      const locSelect = document.getElementById("locationSelect");
+      if (locSelect) {
+        locSelect.innerHTML =
+          '<option value="">-- اختر تصنيف الموقع أولاً --</option>';
+        locSelect.disabled = true;
+      }
+    }
+  }
+
+  // Add Dynamic Note Item Card
+  function addNoteItem() {
+    // Strict check: Ensure GPS is captured first
+    const lat = document.getElementById("latitude").value;
+    const lng = document.getElementById("longitude").value;
+    if (!lat || !lng) {
+      alert(
+        `لا يمكنك إضافة ${itemLabelPlural} إلا بعد تحديد الموقع الجغرافي (GPS) بنجاح.`,
+      );
+      requestGPS();
+      return;
+    }
+
+    noteItemCounter++;
+    const container = document.getElementById("notesContainer");
+    document.getElementById("emptyNotesMsg").classList.add("d-none");
+
+    const cardId = `note_item_${noteItemCounter}`;
+
+    const selectedCategory =
+      document.getElementById("selectedCategory")?.value || "all";
+    let workTypeOptions = '<option value="">-- اختر نوع العمل --</option>';
+    workTypesData.forEach((wt) => {
+      const wtCat = wt.category || "all";
+      if (wtCat === "all" || wtCat === selectedCategory) {
+        workTypeOptions += `<option value="${wt.id}">${wt.name}</option>`;
+      }
+    });
+
+    const cardHTML = `
+        <div id="${cardId}" class="note-item-card" data-images='[]'>
+            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                <h5 class="fw-700 text-primary mb-0">
+                    <i class="fas fa-sticky-note me-2 text-warning"></i>${itemLabelSingular} جديد #${noteItemCounter}
+                </h5>
+                <button type="button" class="btn btn-sm btn-outline-danger rounded-circle" onclick="removeNoteItem('${cardId}')" title="حذف ${itemLabelSingular}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label class="form-label fw-700">1. نوع العمل <span class="text-danger">*</span></label>
+                    <select class="form-select work-type-select" onchange="onWorkTypeChange(this)" required>
+                        ${workTypeOptions}
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label fw-700">2. العنصر <span class="text-danger">*</span></label>
+                    <select class="form-select work-element-select" onchange="onWorkElementChange(this)" required disabled>
+                        <option value="">-- اختر نوع العمل أولاً --</option>
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label fw-700">3. النشاط <span class="text-danger">*</span></label>
+                    <select class="form-select work-activity-select" required disabled>
+                        <option value="">-- اختر العنصر أولاً --</option>
+                    </select>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <label class="form-label fw-700 d-block">
+                        4. صور ${itemLabelSingular} <span class="text-danger">* (صورتين إلى 4 صور)</span>
+                    </label>
+                    
+                    <input type="file" accept="image/*" capture="environment" class="d-none note-photo-input" onchange="uploadNoteItemPhoto('${cardId}', this)">
+                    
+                    <button type="button" class="btn btn-camera" onclick="triggerNotePhotoInput('${cardId}')">
+                        <i class="fas fa-camera me-1"></i>التقاط صورة
+                    </button>
+
+                    <div class="note-photos-grid d-flex flex-wrap gap-2 mt-3"></div>
+                    <small class="text-muted d-block mt-1 note-photos-count">الصور الملتقطة: 0 / 4</small>
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.insertAdjacentHTML("beforeend", cardHTML);
+  }
+
+  // Cascading Level 1 -> Level 2: WorkType -> Element
+  function onWorkTypeChange(selectElement) {
+    const workTypeId = selectElement.value;
+    const card = selectElement.closest(".note-item-card");
+    const elementSelect = card.querySelector(".work-element-select");
+    const activitySelect = card.querySelector(".work-activity-select");
+    const elementContainer = elementSelect ? elementSelect.closest(".col-12") : null;
+
+    if (!elementSelect) return;
+
+    activitySelect.innerHTML =
+      '<option value="">-- اختر العنصر أولاً --</option>';
+    activitySelect.disabled = true;
+
+    if (!workTypeId) {
+      elementSelect.innerHTML =
+        '<option value="">-- اختر نوع العمل أولاً --</option>';
+      elementSelect.disabled = true;
+      if (elementContainer) elementContainer.style.display = "block";
+      return;
+    }
+
+    const filteredElements = workElementsData.filter(
+      (item) => String(item.work_type_id) === String(workTypeId),
+    );
+
+    if (filteredElements.length === 0) {
+      elementSelect.innerHTML =
+        '<option value="">-- لا توجد عناصر مضافة لهذا النوع --</option>';
+      elementSelect.disabled = true;
+      if (elementContainer) elementContainer.style.display = "block";
+      return;
+    }
+
+    // إذا كان هناك عنصر واحد فقط ومسماه "عام" (مثل دورات المياه)، نحدده تلقائياً ونخفي حقل العنصر
+    if (filteredElements.length === 1 && (filteredElements[0].name === "عام" || filteredElements[0].name === "دورة المياه")) {
+      elementSelect.innerHTML = `<option value="${filteredElements[0].id}" selected>${filteredElements[0].name}</option>`;
+      elementSelect.disabled = false;
+      if (elementContainer) elementContainer.style.display = "none";
+      onWorkElementChange(elementSelect);
+      return;
+    }
+
+    if (elementContainer) elementContainer.style.display = "block";
+    let options = '<option value="">-- اختر العنصر --</option>';
+    filteredElements.forEach((item) => {
+      options += `<option value="${item.id}">${item.name}</option>`;
+    });
+
+    elementSelect.innerHTML = options;
+    elementSelect.disabled = false;
+  }
+
+  // Cascading Level 2 -> Level 3: Element -> Activity
+  function onWorkElementChange(selectElement) {
+    const elementId = selectElement.value;
+    const card = selectElement.closest(".note-item-card");
+    const activitySelect = card.querySelector(".work-activity-select");
+
+    if (!activitySelect) return;
+
+    if (!elementId) {
+      activitySelect.innerHTML =
+        '<option value="">-- اختر العنصر أولاً --</option>';
+      activitySelect.disabled = true;
+      return;
+    }
+
+    const filteredActivities = workActivitiesData.filter(
+      (item) => String(item.element_id) === String(elementId),
+    );
+
+    if (filteredActivities.length === 0) {
+      activitySelect.innerHTML =
+        '<option value="">-- لا توجد أنشطة مضافة لهذا العنصر --</option>';
+      activitySelect.disabled = true;
+      return;
+    }
+
+    let options = '<option value="">-- اختر النشاط --</option>';
+    filteredActivities.forEach((item) => {
+      options += `<option value="${item.id}">${item.name}</option>`;
+    });
+
+    activitySelect.innerHTML = options;
+    activitySelect.disabled = false;
+  }
+
+  function removeNoteItem(cardId) {
+    const el = document.getElementById(cardId);
+    if (el) {
+      el.remove();
+    }
+    const container = document.getElementById("notesContainer");
+    if (container.children.length === 0) {
+      document.getElementById("emptyNotesMsg").classList.remove("d-none");
+    }
+  }
+
+  function triggerNotePhotoInput(cardId) {
+    const card = document.getElementById(cardId);
+    const images = JSON.parse(card.getAttribute("data-images") || "[]");
+    if (images.length >= 4) {
+      alert(
+        `لقد وصلت للحد الأقصى لعدد الصور لهذا الـ ${itemLabelSingular} (4 صور)`,
+      );
+      return;
+    }
+    card.querySelector(".note-photo-input").click();
+  }
+
+  async function uploadNoteItemPhoto(cardId, input) {
+    if (!input.files || !input.files[0]) return;
+
+    const file = input.files[0];
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch("/reports/upload-image/", {
+        method: "POST",
+        headers: { "X-CSRFToken": getCsrfToken() },
+        body: formData,
+      });
+      const res = await response.json();
+      if (res.success) {
+        const card = document.getElementById(cardId);
+        const images = JSON.parse(card.getAttribute("data-images") || "[]");
+        images.push({ id: res.image_id, url: res.image_url });
+        card.setAttribute("data-images", JSON.stringify(images));
+
+        renderNotePhotos(cardId);
+        input.value = "";
+      } else {
+        alert("خطأ أثناء رفع الصورة: " + (res.error || "حدث خطأ"));
+      }
+    } catch (e) {
+      alert(`حدث خطأ أثناء رفع صورة الـ ${itemLabelSingular}`);
+    }
+  }
+
+  function renderNotePhotos(cardId) {
+    const card = document.getElementById(cardId);
+    const images = JSON.parse(card.getAttribute("data-images") || "[]");
+    const grid = card.querySelector(".note-photos-grid");
+    const countText = card.querySelector(".note-photos-count");
+
+    grid.innerHTML = "";
+    images.forEach((img, idx) => {
+      const photoWrapper = document.createElement("div");
+      photoWrapper.className = "position-relative d-inline-block";
+      photoWrapper.innerHTML = `
+            <img src="${img.url}" class="photo-box shadow-sm">
+            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle px-2 py-0" onclick="removeNotePhoto('${cardId}', ${idx})">
+                &times;
+            </button>
+        `;
+      grid.appendChild(photoWrapper);
+    });
+
+    countText.innerText = `الصور الملتقطة: ${images.length} / 4`;
+    if (images.length < 2) {
+      countText.className = "text-danger fw-600 d-block mt-1 note-photos-count";
+    } else {
+      countText.className =
+        "text-success fw-600 d-block mt-1 note-photos-count";
+    }
+  }
+
+  function removeNotePhoto(cardId, index) {
+    const card = document.getElementById(cardId);
+    let images = JSON.parse(card.getAttribute("data-images") || "[]");
+    images.splice(index, 1);
+    card.setAttribute("data-images", JSON.stringify(images));
+    renderNotePhotos(cardId);
+  }
+
+  // CSRF Token Helper
+  function getCsrfToken() {
+    return document.querySelector("[name=csrfmiddlewaretoken]").value;
+  }
+
+  // Submit Report Validation
+  async function submitReport() {
+    const submitBtn = document.getElementById("submitBtn");
+    const lat = document.getElementById("latitude").value;
+    const lng = document.getElementById("longitude").value;
+    const locationTypeId = document.getElementById("locationTypeSelect").value;
+    const locationId = document.getElementById("locationSelect").value;
+    const locationPhotoId = document.getElementById("locationPhotoId").value;
+
+    // 1. Strict GPS check
+    if (!lat || !lng) {
+      alert(
+        "خطأ: لا يمكن إرسال التقرير بدون تحديد الموقع الجغرافي (GPS) بنجاح أولاً",
+      );
+      requestGPS();
+      return;
+    }
+
+    // 2. Strict Location Photo check
+    if (!locationPhotoId) {
+      alert("خطأ: لا يمكن إرسال التقرير بدون التقاط صورة تحديد الموقع");
+      return;
+    }
+
+    // 3. Strict Location check
+    if (!locationTypeId || !locationId) {
+      alert("خطأ: يرجى اختيار تصنيف الموقع واسم الموقع");
+      return;
+    }
+
+    // 4. Strict Dynamic Notes check
+    const noteCards = document.querySelectorAll(".note-item-card");
+    if (noteCards.length === 0) {
+      alert(
+        `خطأ: لا يمكن إرسال التقرير بدون إضافة ${itemLabelSingular} واحد على الأقل بالضغط على زر (${addItemBtnText})`,
+      );
+      return;
+    }
+
+    const notesPayload = [];
+    let isValid = true;
+
+    noteCards.forEach((card, index) => {
+      if (!isValid) return;
+
+      const workTypeId = card.querySelector(".work-type-select").value;
+      const workElementSelect = card.querySelector(".work-element-select");
+      const workElementId = workElementSelect ? workElementSelect.value : "";
+      const workActivitySelect = card.querySelector(".work-activity-select");
+      const workActivityId = workActivitySelect ? workActivitySelect.value : "";
+      const workClassification =
+        workActivitySelect && workActivitySelect.selectedIndex >= 0
+          ? workActivitySelect.options[workActivitySelect.selectedIndex].text
+          : "";
+      const images = JSON.parse(card.getAttribute("data-images") || "[]");
+      const imageIds = images.map((img) => img.id);
+
+      if (!workTypeId) {
+        alert(
+          `يرجى اختيار نوع العمل في الـ ${itemLabelSingular} رقم #${index + 1}`,
+        );
+        isValid = false;
+        return;
+      }
+
+      if (!workElementId) {
+        alert(
+          `يرجى اختيار العنصر في الـ ${itemLabelSingular} رقم #${index + 1}`,
+        );
+        isValid = false;
+        return;
+      }
+
+      if (!workActivityId) {
+        alert(
+          `يرجى اختيار النشاط في الـ ${itemLabelSingular} رقم #${index + 1}`,
+        );
+        isValid = false;
+        return;
+      }
+
+      if (imageIds.length < 2) {
+        alert(
+          `الـ ${itemLabelSingular} رقم #${index + 1} يجب أن يحتوي على صورتين على الأقل`,
+        );
+        isValid = false;
+        return;
+      }
+
+      notesPayload.push({
+        work_type_id: workTypeId,
+        work_item_detail_id: workElementId,
+        work_element_id: workElementId,
+        work_activity_id: workActivityId,
+        work_classification: workClassification,
+        image_ids: imageIds,
+      });
+    });
+
+    if (!isValid) return;
+
+    // Idempotency Key
+    let idempotencyKey = sessionStorage.getItem("current_report_key");
+    if (!idempotencyKey) {
+      idempotencyKey =
+        "rep_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+      sessionStorage.setItem("current_report_key", idempotencyKey);
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML =
+      '<i class="fas fa-spinner fa-spin me-2"></i>جاري إرسال التقرير...';
+
+    const unitElem = document.getElementById("unitSelect");
+    const unitId = unitElem ? unitElem.value : null;
+
+    const payload = {
+      latitude: parseFloat(lat),
+      longitude: parseFloat(lng),
+      location_type_id: parseInt(locationTypeId),
+      location_id: parseInt(locationId),
+      location_photo_id: parseInt(locationPhotoId),
+      unit_id: unitId ? parseInt(unitId) : null,
+      notes: notesPayload,
+      idempotency_key: idempotencyKey,
+    };
+
+    try {
+      const response = await fetch("/reports/submit/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCsrfToken(),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const res = await response.json();
+
+      if (res.success) {
+        sessionStorage.removeItem("current_report_key");
+        alert("تم إرسال التقرير الميداني بنجاح برقم: " + res.report_number);
+        window.location.href = `/reports/${res.report_id}/`;
+      } else {
+        alert("حدث خطأ: " + (res.error || "فشل إرسال التقرير"));
+        submitBtn.disabled = false;
+        submitBtn.innerHTML =
+          '<i class="fas fa-paper-plane me-2"></i>إرسال التقرير الميداني';
+      }
+    } catch (e) {
+      alert("حدث خطأ أثناء الاتصال بالخادم. حاول مجدداً.");
+      submitBtn.disabled = false;
+      submitBtn.innerHTML =
+        '<i class="fas fa-paper-plane me-2"></i>إرسال التقرير الميداني';
+    }
+  }
+</script>
+{% endblock %}

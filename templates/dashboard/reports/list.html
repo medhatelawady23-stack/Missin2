@@ -1,0 +1,339 @@
+{% extends 'base.html' %}
+{% block title %}جدول التقارير الميدانية{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1300px;">
+    
+    <!-- Header & Action Bar -->
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="section-title mb-1"><i class="fas fa-list-check text-primary me-2"></i>جدول التقارير الميدانية</h1>
+            <small class="text-muted">عرض واستعراض جميع التقارير الميدانية المرفوعة في النظام والبحث والتصدير المباشر</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'dashboard:home' %}" class="btn btn-outline-primary rounded-pill px-4 py-2 fw-700 shadow-sm">
+                <i class="fas fa-arrow-right me-2"></i>الرجوع للوحة التحكم
+            </a>
+        </div>
+    </div>
+
+<style>
+    .role-btn-contractor-active { background: linear-gradient(135deg, #3730a3 0%, #312e81 100%); color: #ffffff !important; border: none; }
+    .role-btn-supervisor-active { background: linear-gradient(135deg, #0f766e 0%, #115e59 100%); color: #ffffff !important; border: none; }
+    .role-btn-inactive { color: #475569 !important; background: transparent; border: none; }
+
+    .cat-btn-active { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff !important; border: none; }
+    .cat-btn-restroom-active { background: linear-gradient(135deg, #d97706 0%, #b45309 100%); color: #ffffff !important; border: none; }
+    .cat-btn-open-active { background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #ffffff !important; border: none; }
+    .cat-btn-inactive { color: #64748b !important; background: transparent; border: none; }
+</style>
+
+    <!-- Role Switcher (تقارير المقاولين vs تقارير المراقبين) -->
+    <div class="card-modern p-3 mb-4 bg-light border">
+        <div class="d-flex align-items-center gap-2">
+            <span class="fw-800 text-dark small me-2"><i class="fas fa-users-cog text-primary me-1"></i>نوع المستخدمين:</span>
+            <div class="d-flex gap-1 p-1 bg-white rounded-pill border shadow-sm flex-fill max-w-md">
+                <a href="?role=contractor{% if current_category %}&category={{ current_category }}{% endif %}{% if request.GET.unit %}&unit={{ request.GET.unit }}{% endif %}{% if request.GET.location_type %}&location_type={{ request.GET.location_type }}{% endif %}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                   class="btn flex-fill rounded-pill fw-700 py-1.5 px-4 transition-all {% if current_role != 'supervisor' %}role-btn-contractor-active shadow-sm{% else %}role-btn-inactive{% endif %}">
+                    <i class="fas fa-user-tie me-1"></i>تقارير المقاولين
+                </a>
+                
+                <a href="?role=supervisor{% if current_category %}&category={{ current_category }}{% endif %}{% if request.GET.unit %}&unit={{ request.GET.unit }}{% endif %}{% if request.GET.location_type %}&location_type={{ request.GET.location_type }}{% endif %}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                   class="btn flex-fill rounded-pill fw-700 py-1.5 px-4 transition-all {% if current_role == 'supervisor' %}role-btn-supervisor-active shadow-sm{% else %}role-btn-inactive{% endif %}">
+                    <i class="fas fa-user-ninja me-1"></i>تقارير المراقبين
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filters Directly Above Table -->
+    <form method="get" class="card-modern p-4 mb-4">
+        <input type="hidden" name="role" value="{{ current_role|default:'contractor' }}">
+        {% if current_category %}<input type="hidden" name="category" value="{{ current_category }}">{% endif %}
+        
+        <!-- Row 1: Search & Dropdown Filters -->
+        <div class="row g-3 align-items-end mb-3">
+            <div class="col-12 col-md-3">
+                <label class="form-label fw-700 small"><i class="fas fa-search me-1 text-primary"></i>بحث عام في التقارير</label>
+                <input type="text" name="q" value="{{ request.GET.q }}" class="form-control"
+                       placeholder="رقم التقرير / الموقع / الموظف...">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label fw-700 small"><i class="fas fa-building text-primary me-1"></i>وحدة التنسيق</label>
+                <select name="unit" id="filterUnit" class="form-select" onchange="onUnitOrTypeChange(this)">
+                    <option value="">كل وحدات التنسيق</option>
+                    {% for u in units %}
+                    <option value="{{ u.id }}" {% if request.GET.unit == u.id|stringformat:'s' %}selected{% endif %}>{{ u.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if current_category != 'restroom' %}
+            <div class="col-12 col-md-3">
+                <label class="form-label fw-700 small"><i class="fas fa-tags text-primary me-1"></i>تصنيف الموقع</label>
+                <select name="location_type" id="filterLocationType" class="form-select" onchange="onUnitOrTypeChange(this)">
+                    <option value="">كل التصنيفات</option>
+                    {% for lt in location_types %}
+                    <option value="{{ lt.id }}" {% if request.GET.location_type == lt.id|stringformat:'s' %}selected{% endif %}>{{ lt.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="col-12 col-md-3">
+                <label class="form-label fw-700 small"><i class="fas fa-map-marker-alt text-primary me-1"></i>اسم الموقع</label>
+                <select name="location" id="filterLocation" class="form-select" onchange="this.form.submit()">
+                    <option value="">كل المواقع</option>
+                    {% for loc in locations %}
+                    <option value="{{ loc.id }}" {% if request.GET.location == loc.id|stringformat:'s' %}selected{% endif %}>{{ loc.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Row 2: User Filter, Side-by-Side Dates & Buttons -->
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label fw-700 small"><i class="fas fa-user me-1 text-primary"></i>الموظف الميداني</label>
+                <select name="user" class="form-select" onchange="this.form.submit()">
+                    <option value="">كل الموظفين</option>
+                    {% for u in users %}
+                    <option value="{{ u.id }}" {% if request.GET.user == u.id|stringformat:'s' %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label fw-700 small"><i class="fas fa-calendar-alt me-1 text-primary"></i>من تاريخ</label>
+                <input type="date" name="date_from" value="{{ request.GET.date_from }}" class="form-control text-end" dir="ltr" onchange="this.form.submit()">
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label fw-700 small"><i class="fas fa-calendar-alt me-1 text-primary"></i>إلى تاريخ</label>
+                <input type="date" name="date_to" value="{{ request.GET.date_to }}" class="form-control text-end" dir="ltr" onchange="this.form.submit()">
+            </div>
+            <div class="col-12 col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary-custom flex-fill rounded-pill py-2" title="بحث"><i class="fas fa-search me-1"></i>بحث</button>
+                <a href="{% url 'dashboard:report_list' %}{% if current_category %}?category={{ current_category }}{% endif %}" class="btn btn-outline-secondary rounded-pill py-2" title="إعادة ضبط"><i class="fas fa-rotate me-1"></i>إعادة ضبط</a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Field Reports Table Container Card -->
+    <div class="card-modern">
+        <div class="card-header-modern d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <span class="fw-700"><i class="fas fa-list-check me-2 text-primary"></i>جدول التقارير الميدانية</span>
+                {% if current_category == 'restroom' %}
+                <span class="badge bg-warning text-dark rounded-pill px-3 py-1.5 fw-700">إجمالي الأيام والمواقع: {{ restroom_grouped_reports|length }}</span>
+                {% else %}
+                <span class="badge bg-light text-primary rounded-pill px-3 py-1.5 fw-700">إجمالي المعروض: {{ page_obj.paginator.count|default:reports|length }}</span>
+                {% endif %}
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <!-- زر تصدير PDF مدمج للتقارير المحددة -->
+                <form id="bulkExportPdfForm" action="{% url 'dashboard:report_bulk_export_pdf' %}" method="post" target="_blank" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="report_ids_str" id="selectedReportIdsInput">
+                    <button type="submit" id="btnBulkExportPdf" class="btn btn-sm btn-danger rounded-pill px-3 py-1.5 fw-700 shadow-sm d-none">
+                        <i class="fas fa-file-pdf me-1.5"></i>تصدير التقارير المحددة (PDF مدمج) <span id="selectedCountBadge" class="badge bg-white text-danger ms-1">0</span>
+                    </button>
+                </form>
+
+                <!-- زر تصدير الاكسيل الخاص بهذا الجدول والمربوط بالفلاتر المطبقة حالياً -->
+                <a href="{% url 'dashboard:export_excel' %}?{{ request.GET.urlencode }}" class="btn btn-sm btn-success rounded-pill px-3 py-1.5 fw-700 shadow-sm" title="تصدير بيانات هذا الجدول بالفلاتر الحالية Excel">
+                    <i class="fas fa-file-excel me-1.5"></i>تصدير جدول البيانات Excel
+                </a>
+            </div>
+        </div>
+
+        {% if current_category == 'restroom' %}
+        <!-- جدول مصفوفة دورات المياه المجمعة أفقياً حسب اليوم والزيارات -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 border">
+                <thead class="table-dark">
+                    <tr class="text-center align-middle">
+                        <th style="width: 40px;"><input type="checkbox" id="selectAllReports" class="form-check-input" title="تحديد الكل"></th>
+                        <th class="py-3 ps-3" style="width: 120px;">التاريخ</th>
+                        <th style="width: 150px;">وحدة التنسيق</th>
+                        <th style="width: 180px;">اسم دورة المياه</th>
+                        <th>الزيارات المسجلة في هذا اليوم (اسم الموظف، الوقت، حالة البنود الـ6)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in restroom_grouped_reports %}
+                    <tr class="align-middle">
+                        <td class="text-center">
+                            {% for v in r.visits %}
+                            <input type="checkbox" value="{{ v.report_id }}" class="form-check-input report-cb me-1" title="تحديد الزيارة #{{ v.report_number }}">
+                            {% endfor %}
+                        </td>
+                        <td class="ps-3 text-center fw-700 text-primary">{{ r.date_str }}</td>
+                        <td class="text-center"><span class="badge bg-info text-dark fs-6">{{ r.unit_name }}</span></td>
+                        <td class="text-center fw-700 text-dark">{{ r.location_name }}</td>
+                        <td>
+                            <div class="d-flex flex-column gap-2">
+                                {% for v in r.visits %}
+                                <div class="p-2 rounded-3 bg-light border d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="checkbox" value="{{ v.report_id }}" class="form-check-input report-cb me-1" title="تحديد الزيارة #{{ v.report_number }}">
+                                        <span class="badge bg-primary rounded-pill px-3 py-1.5"><i class="fas fa-user me-1"></i>{{ v.user_name }}</span>
+                                        <span class="badge bg-secondary rounded-pill px-2 py-1"><i class="far fa-clock me-1"></i>{{ v.time_str }}</span>
+                                        <a href="{% url 'dashboard:report_detail' v.report_id %}" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0" title="عرض التقرير">
+                                            <i class="fas fa-eye me-1"></i>#{{ v.report_number }}
+                                        </a>
+                                    </div>
+                                    <div class="d-flex gap-1 flex-wrap">
+                                        {% for item_val in v.items %}
+                                        {% if forloop.counter == 1 %}<span class="badge {% if item_val == 1 %}bg-success{% else %}bg-light text-muted border{% endif %} px-2 py-1" title="أدوات النظافة">أدوات: {{ item_val }}</span>{% endif %}
+                                        {% if forloop.counter == 2 %}<span class="badge {% if item_val == 1 %}bg-success{% else %}bg-light text-muted border{% endif %} px-2 py-1" title="مواد النظافة">مواد: {{ item_val }}</span>{% endif %}
+                                        {% if forloop.counter == 3 %}<span class="badge {% if item_val == 1 %}bg-success{% else %}bg-light text-muted border{% endif %} px-2 py-1" title="أعمال النظافة الدورية لدورات المياه">دورية: {{ item_val }}</span>{% endif %}
+                                        {% if forloop.counter == 4 %}<span class="badge {% if item_val == 1 %}bg-primary{% else %}bg-light text-muted border{% endif %} px-2 py-1" title="الاعمال المدنية">مدنية: {{ item_val }}</span>{% endif %}
+                                        {% if forloop.counter == 5 %}<span class="badge {% if item_val == 1 %}bg-primary{% else %}bg-light text-muted border{% endif %} px-2 py-1" title="الأعمال الكهربائية">كهرباء: {{ item_val }}</span>{% endif %}
+                                        {% if forloop.counter == 6 %}<span class="badge {% if item_val == 1 %}bg-primary{% else %}bg-light text-muted border{% endif %} px-2 py-1" title="الأعمال الميكانيكية">ميكانيك: {{ item_val }}</span>{% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="fas fa-restroom fa-3x mb-3 text-secondary opacity-50 d-block"></i>
+                            لا توجد تقارير دورات مياه مطابقة للفلاتر المحددة حالياً
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <!-- جدول التقارير القياسي -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3 text-center" style="width: 40px;"><input type="checkbox" id="selectAllReports" class="form-check-input" title="تحديد الكل"></th>
+                        <th class="ps-2">رقم التقرير</th>
+                        <th>الموظف الميداني</th>
+                        <th>وحدة التنسيق</th>
+                        <th>تصنيف الموقع</th>
+                        <th>اسم الموقع</th>
+                        <th>تاريخ الإنشاء</th>
+                        <th class="text-center">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr>
+                        <td class="ps-3 text-center">
+                            <input type="checkbox" value="{{ report.pk }}" class="form-check-input report-cb">
+                        </td>
+                        <td class="ps-2">
+                            <span class="fw-700 text-primary">{{ report.report_number }}</span>
+                        </td>
+                        <td>
+                            <div class="fw-600">{{ report.user.get_full_name|default:report.user.username }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-info text-dark">{{ report.unit.name|default:"--" }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ report.location_type.name|default:"--" }}</span>
+                        </td>
+                        <td>
+                            <div class="fw-600">{{ report.location.name|default:"--" }}</div>
+                        </td>
+                        <td>
+                            <span class="text-muted small"><i class="far fa-clock me-1"></i>{{ report.created_at|date:"Y/m/d H:i" }}</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'dashboard:report_detail' report.pk %}" class="btn btn-outline-primary rounded-pill px-3 me-1" title="عرض التفاصيل">
+                                    <i class="fas fa-eye me-1"></i>عرض
+                                </a>
+                                <a href="{% url 'dashboard:export_pdf' report.pk %}" target="_blank" class="btn btn-outline-danger rounded-pill px-3 me-1" title="تصدير PDF">
+                                    <i class="fas fa-file-pdf me-1"></i>PDF
+                                </a>
+                                <a href="{% url 'dashboard:report_delete' report.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-outline-secondary rounded-pill px-2" title="حذف التقرير">
+                                    <i class="fas fa-trash text-danger"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="fas fa-folder-open fa-3x mb-3 text-secondary opacity-50 d-block"></i>
+                            لا توجد تقارير مطابقة للفلاتر المحددة حالياً
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% if is_paginated %}
+        <div class="card-footer bg-white d-flex justify-content-center py-3">
+            <nav>
+                <ul class="pagination mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo; السابق</a></li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">التالي &raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+function onUnitOrTypeChange(selectElement) {
+    const form = selectElement.form;
+    const locSelect = document.getElementById('filterLocation');
+    if (locSelect) locSelect.value = "";
+    form.submit();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCb = document.getElementById('selectAllReports');
+    const reportCbs = document.querySelectorAll('.report-cb');
+    const btnBulkExportPdf = document.getElementById('btnBulkExportPdf');
+    const selectedCountBadge = document.getElementById('selectedCountBadge');
+    const selectedReportIdsInput = document.getElementById('selectedReportIdsInput');
+
+    function updateBulkExportState() {
+        const selected = Array.from(document.querySelectorAll('.report-cb:checked')).map(cb => cb.value);
+        if (selected.length > 0) {
+            btnBulkExportPdf.classList.remove('d-none');
+            selectedCountBadge.textContent = selected.length;
+            selectedReportIdsInput.value = selected.join(',');
+        } else {
+            btnBulkExportPdf.classList.add('d-none');
+            selectedCountBadge.textContent = '0';
+            selectedReportIdsInput.value = '';
+        }
+    }
+
+    if (selectAllCb) {
+        selectAllCb.addEventListener('change', function() {
+            reportCbs.forEach(cb => cb.checked = this.checked);
+            updateBulkExportState();
+        });
+    }
+
+    reportCbs.forEach(cb => {
+        cb.addEventListener('change', updateBulkExportState);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}إدارة المقاولين - لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1200px;">
+    
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="section-title mb-1"><i class="fas fa-user-tie text-primary me-2"></i>إدارة حسابات المقاولين</h1>
+            <p class="text-muted mb-0">ربط كل مقاول بوحدته المخصصة ومتابعة تفاصيل حسابه</p>
+        </div>
+        <a href="{% url 'dashboard:user_create' %}" class="btn btn-primary-custom rounded-pill px-4 py-2 shadow-sm">
+            <i class="fas fa-plus-circle me-1"></i>إضافة مقاول جديد
+        </a>
+    </div>
+
+    <!-- Search Card -->
+    <form method="get" class="card-modern p-3 mb-4">
+        <div class="input-group">
+            <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
+            <input type="text" name="q" value="{{ request.GET.q }}" class="form-control border-start-0 ps-0"
+                   placeholder="ابحث باسم المستخدم، الاسم الكامل، أو البريد الإلكتروني...">
+            <button class="btn btn-primary-custom px-4" type="submit">بحث</button>
+            {% if request.GET.q %}
+            <a href="{% url 'dashboard:user_list' %}" class="btn btn-outline-secondary px-3"><i class="fas fa-times"></i></a>
+            {% endif %}
+        </div>
+    </form>
+
+    <div class="card-modern">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">المستخدم</th>
+                        <th>الاسم الكامل</th>
+                        <th>الوحدة المرتبطة</th>
+                        <th>نوع الحساب</th>
+                        <th>الحالة</th>
+                        <th>تاريخ الانضمام</th>
+                        <th class="text-center">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-light text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center border" style="width:36px;height:36px;">
+                                    {{ user.username|slice:":1"|upper }}
+                                </div>
+                                <span class="fw-700 text-dark">{{ user.username }}</span>
+                            </div>
+                        </td>
+                        <td>{{ user.get_full_name|default:"-" }}</td>
+                        <td>
+                            {% if user.profile and user.profile.unit %}
+                            <span class="badge bg-info text-dark rounded-pill px-3 py-2">
+                                <i class="fas fa-building me-1"></i>{{ user.profile.unit.name }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark rounded-pill px-3 py-2">
+                                <i class="fas fa-exclamation-circle me-1"></i>بدون وحدة
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_superuser %}
+                            <span class="badge bg-danger rounded-pill px-3 py-2"><i class="fas fa-user-shield me-1"></i>مشرف عام</span>
+                            {% elif user.is_staff %}
+                            <span class="badge bg-primary rounded-pill px-3 py-2"><i class="fas fa-user-tie me-1"></i>مشرف</span>
+                            {% else %}
+                            <span class="badge bg-secondary rounded-pill px-3 py-2"><i class="fas fa-user me-1"></i>موظف ميداني</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_active %}
+                            <span class="badge bg-success-subtle text-success border border-success rounded-pill px-3 py-1">نشط</span>
+                            {% else %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-3 py-1">موقوف</span>
+                            {% endif %}
+                        </td>
+                        <td><small class="text-muted"><i class="fas fa-calendar me-1"></i>{{ user.date_joined|date:"Y/m/d" }}</small></td>
+                        <td class="text-center">
+                            <a href="{% url 'dashboard:user_edit' user.pk %}" class="btn btn-sm btn-outline-primary rounded-pill px-3 me-1" title="تعديل">
+                                <i class="fas fa-edit me-1"></i>تعديل
+                            </a>
+                            {% if not user.is_superuser %}
+                            <a href="{% url 'dashboard:user_delete' user.pk %}" class="btn btn-sm btn-outline-danger rounded-pill px-2" title="حذف">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <i class="fas fa-users-slash fa-3x mb-3 opacity-50"></i>
+                            <p class="mb-0 fw-600">لا يوجد مستخدمون مطابقون للبحث</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+    <nav class="mt-4 d-flex justify-content-center">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">السابق</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">التالي</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
+{% endblock %}

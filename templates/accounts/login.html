@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}تسجيل الدخول - نظام التقارير الميدانية{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center py-5" style="background: #f8fafc; margin: -2rem -1.5rem;">
+    <div class="w-100" style="max-width: 480px; padding: 1.25rem;">
+
+        <!-- Unified Vibrant Deep Navy Executive Ticket -->
+        <div class="card border-0 shadow-lg" style="border-radius: 26px; overflow: hidden; background: linear-gradient(135deg, #0d253f 0%, #134074 60%, #1d4ed8 100%); border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 25px 65px rgba(13, 37, 63, 0.28) !important;">
+            
+            <!-- Vibrant Light Navy Accent Top Line -->
+            <div style="height: 5px; background: linear-gradient(90deg, #60a5fa, #3b82f6, #1d4ed8);"></div>
+
+            <!-- Ticket Content -->
+            <div class="p-4 p-md-4">
+                
+                <!-- Logos Row (Inside Ticket Header) -->
+                <div class="d-flex align-items-center justify-content-between mb-4 px-1 gap-2 border-bottom pb-3" style="border-color: rgba(255,255,255,0.14) !important;">
+                    <!-- Right: Amana Transparent White Logo -->
+                    <img src="{% static 'images/amana_logo_clean_white.png' %}" alt="شعار أمانة منطقة الرياض" style="max-height: 48px; max-width: 175px; object-fit: contain;">
+                    
+                    <!-- Left: Company Transparent White Logo (Enlarged) -->
+                    <img src="{% static 'images/company_logo_clean_white.png' %}" alt="شعار الشركة الاستشارية" style="max-height: 68px; max-width: 210px; object-fit: contain;">
+                </div>
+
+                <!-- Ticket Title Badge -->
+                <div class="text-center mb-4">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 shadow"
+                         style="width: 64px; height: 64px; background: rgba(96, 165, 250, 0.18); backdrop-filter: blur(10px); border: 1px solid rgba(96, 165, 250, 0.35);">
+                        <i class="fas fa-clipboard-list fa-2x" style="color: #93c5fd;"></i>
+                    </div>
+                    <h2 class="text-white fw-800 mb-2" style="font-size: 1.6rem; letter-spacing: -0.5px;">نظام التقارير الميدانية</h2>
+                    <div class="text-white-50 small mt-2 pt-2 border-top lh-base" style="font-size: 0.88rem; border-color: rgba(255,255,255,0.14) !important;">
+                        <div class="fw-700 text-white mb-1" style="font-size: 0.95rem;">قطاع الوسط</div>
+                        <div class="mb-1 text-white-50">إدارة صيانة الحدائق والمنتزهات</div>
+                        <div class="mb-1 text-white-50">الاستشاري / شركة مشاري الشثري</div>
+                        <div class="text-white-50">مدير المشروع / م . مدحت العوضي</div>
+                    </div>
+                </div>
+
+                {% if form.errors %}
+                <div class="alert alert-danger py-2.5 small rounded-3 mb-3 border-0 bg-danger text-white">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    اسم المستخدم أو كلمة المرور غير صحيحة. حاول مرة أخرى.
+                </div>
+                {% endif %}
+
+                <!-- Form -->
+                <form method="post" id="loginForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label fw-700 text-white-50 small mb-2">
+                            <i class="fas fa-user me-1" style="color: #93c5fd;"></i>اسم المستخدم
+                        </label>
+                        <input type="text" name="username" id="id_username"
+                               class="form-control form-control-lg text-dark bg-white border-0 shadow-sm"
+                               style="border-radius: 12px; font-size: 1.05rem;"
+                               placeholder="أدخل اسم المستخدم..."
+                               autofocus autocomplete="username" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="id_password" class="form-label fw-700 text-white-50 small mb-2">
+                            <i class="fas fa-lock me-1" style="color: #93c5fd;"></i>كلمة المرور
+                        </label>
+                        <div class="input-group">
+                            <input type="password" name="password" id="id_password"
+                                   class="form-control form-control-lg text-dark bg-white border-0 shadow-sm border-end-0"
+                                   style="border-top-right-radius: 12px; border-bottom-right-radius: 12px; font-size: 1.05rem;"
+                                   placeholder="أدخل كلمة المرور..."
+                                   autocomplete="current-password" required>
+                            <button class="btn bg-white border-0 text-muted px-3" type="button" id="togglePassword"
+                                    style="border-top-left-radius: 12px; border-bottom-left-radius: 12px;">
+                                <i class="fas fa-eye" id="toggleIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn w-100 py-3 fs-5 fw-800 shadow-lg text-white"
+                            style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border: 1px solid rgba(255,255,255,0.2); border-radius: 14px; transition: all 0.25s ease;">
+                        <i class="fas fa-arrow-left me-2"></i>تسجيل الدخول
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('togglePassword').addEventListener('click', function() {
+    const pwd = document.getElementById('id_password');
+    const icon = document.getElementById('toggleIcon');
+    if (pwd.type === 'password') {
+        pwd.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        pwd.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+});
+</script>
+{% endblock %}

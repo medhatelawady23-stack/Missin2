@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+{% block title %}أنواع الأعمال والعناصر والأنشطة - لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1300px">
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h1 class="section-title mb-1">
+        <i class="fas fa-briefcase text-primary me-2"></i>إدارة شجرة الأعمال (نوع العمل ➔ العنصر ➔ النشاط)
+      </h1>
+      <p class="text-muted mb-0">
+        التحكم الكامل بأنواع العمل والعناصر التابعة والأنشطة التفصيلية في مكان واحد
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-primary rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#addWorkItemModal">
+        <i class="fas fa-cubes me-1"></i>إضافة عنصر جديد
+      </button>
+      <button type="button" class="btn btn-outline-success rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#addWorkActivityModal">
+        <i class="fas fa-tasks me-1"></i>إضافة نشاط جديد
+      </button>
+      <a href="{% url 'dashboard:worktype_create' %}" class="btn btn-primary-custom rounded-pill px-4 py-2 shadow-sm">
+        <i class="fas fa-plus-circle me-1"></i>إضافة نوع عمل
+      </a>
+    </div>
+  </div>
+
+  <!-- Search & Filter Bar -->
+  <form method="get" class="card-modern p-3 mb-4">
+    <div class="row g-3 align-items-center">
+      <div class="col-12 col-md-6">
+        <div class="input-group">
+          <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
+          <input type="text" name="q" value="{{ request.GET.q }}" class="form-control border-start-0 ps-0" placeholder="ابحث باسم نوع العمل...">
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <select name="category" class="form-select" onchange="this.form.submit()">
+          <option value="">-- جميع تصنيفات المواقع --</option>
+          <option value="restroom" {% if request.GET.category == 'restroom' %}selected{% endif %}>دورات المياه</option>
+          <option value="location" {% if request.GET.category == 'location' %}selected{% endif %}>مواقع</option>
+          <option value="open_space" {% if request.GET.category == 'open_space' %}selected{% endif %}>مساحات انتشارية</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary-custom w-100">بحث</button>
+        {% if request.GET.q or request.GET.category %}
+        <a href="{% url 'dashboard:worktype_list' %}" class="btn btn-outline-secondary"><i class="fas fa-times"></i></a>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+
+  <!-- Table -->
+  <div class="card-modern overflow-hidden mb-5">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4" style="width: 50px">#</th>
+            <th style="width: 22%">1. نوع العمل</th>
+            <th>2. العناصر ➔ 3. الأنشطة التابعة (Elements & Activities)</th>
+            <th style="width: 14%">تصنيف الموقع</th>
+            <th style="width: 10%">الحالة</th>
+            <th class="text-center" style="width: 12%">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for wt in work_types %}
+          <tr>
+            <td class="ps-4 fw-600 text-muted">{{ forloop.counter }}</td>
+            <td>
+              <div class="fw-700 text-primary fs-6 mb-1">{{ wt.name }}</div>
+              <small class="text-muted"><i class="fas fa-calendar me-1"></i>{{ wt.created_at|date:"Y-m-d" }}</small>
+            </td>
+            <td>
+              <div class="d-flex flex-column gap-2 py-1">
+                {% for item in wt.details.all %}
+                <div class="p-2 border rounded-3 bg-light shadow-sm">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <span class="fw-700 text-dark me-2">
+                      <i class="fas fa-cube text-primary me-1"></i>{{ item.name }}
+                    </span>
+                    <div class="d-flex gap-1">
+                      <a href="{% url 'dashboard:workitem_edit' item.pk %}" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-0 fs-7" title="تعديل العنصر">
+                        <i class="fas fa-pen fa-xs"></i> تعديل العنصر
+                      </a>
+                      <button type="button" class="btn btn-xs btn-outline-success rounded-pill px-2 py-0 fs-7" onclick="openAddActivityModal('{{ item.id }}', '{{ item.name|escapejs }}')" title="إضافة نشاط لهذا العنصر">
+                        <i class="fas fa-plus fa-xs"></i> إضافة نشاط
+                      </button>
+                      <a href="{% url 'dashboard:workitem_delete' item.pk %}" class="btn btn-xs btn-outline-danger rounded-circle p-1" title="حذف العنصر">
+                        <i class="fas fa-times fa-xs"></i>
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- الأنشطة التابعة للعنصر -->
+                  <div class="d-flex flex-wrap gap-1 mt-1 ms-3">
+                    {% for act in item.activities.all %}
+                    <span class="badge bg-white text-secondary border px-2 py-1 rounded-pill d-inline-flex align-items-center gap-1 shadow-2xs">
+                      <i class="fas fa-tasks text-success fa-xs"></i>
+                      <span>{{ act.name }}</span>
+                      <a href="{% url 'dashboard:workactivity_edit' act.pk %}" class="text-primary text-decoration-none ms-1" title="تعديل النشاط">
+                        <i class="fas fa-pen fa-2xs"></i>
+                      </a>
+                      <a href="{% url 'dashboard:workactivity_delete' act.pk %}" class="text-danger text-decoration-none" title="حذف النشاط">
+                        <i class="fas fa-times fa-2xs"></i>
+                      </a>
+                    </span>
+                    {% empty %}
+                    <span class="text-muted small italic opacity-75 fs-7">
+                      <i class="fas fa-info-circle me-1"></i>لا توجد أنشطة مضافة لهذا العنصر بعد
+                    </span>
+                    {% endfor %}
+                  </div>
+                </div>
+                {% empty %}
+                <span class="text-muted small italic opacity-75">
+                  <i class="fas fa-info-circle me-1"></i>لا توجد عناصر مضافة لهذا النوع
+                </span>
+                {% endfor %}
+                <div class="mt-1">
+                  <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2.5 py-0.5 fs-7" onclick="openAddModalForWorkType('{{ wt.id }}')" title="إضافة عنصر لهذا النوع">
+                    <i class="fas fa-plus-circle me-1"></i>إضافة عنصر جديد
+                  </button>
+                </div>
+              </div>
+            </td>
+            <td>
+              {% if wt.category == 'restroom' %}
+              <span class="badge bg-warning-subtle text-dark border border-warning rounded-pill px-3 py-1 fw-700">
+                <i class="fas fa-restroom me-1"></i>دورات المياه
+              </span>
+              {% elif wt.category == 'location' %}
+              <span class="badge bg-info-subtle text-info border border-info rounded-pill px-3 py-1 fw-700">
+                <i class="fas fa-map-marker-alt me-1"></i>مواقع
+              </span>
+              {% elif wt.category == 'open_space' %}
+              <span class="badge bg-success-subtle text-success border border-success rounded-pill px-3 py-1 fw-700">
+                <i class="fas fa-tree me-1"></i>مساحات انتشارية
+              </span>
+              {% endif %}
+            </td>
+            <td>
+              {% if wt.is_active %}
+              <span class="badge bg-success-subtle text-success border border-success rounded-pill px-3 py-1">
+                <i class="fas fa-check-circle me-1"></i>نشط
+              </span>
+              {% else %}
+              <span class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-3 py-1">
+                <i class="fas fa-times-circle me-1"></i>غير نشط
+              </span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <div class="btn-group">
+                <a href="{% url 'dashboard:worktype_edit' wt.pk %}" class="btn btn-sm btn-outline-primary rounded-start-pill px-2.5" title="تعديل نوع العمل">
+                  <i class="fas fa-edit me-1"></i>تعديل
+                </a>
+                <a href="{% url 'dashboard:worktype_delete' wt.pk %}" class="btn btn-sm btn-outline-danger rounded-end-pill px-2.5" title="حذف نوع العمل">
+                  <i class="fas fa-trash me-1"></i>حذف
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center py-5 text-muted">
+              <i class="fas fa-briefcase fa-3x mb-3 opacity-50 text-warning"></i>
+              <p class="mb-0 fw-600">لا توجد أنواع عمل مضافة حتى الآن</p>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Element (WorkItemDetail) -->
+<div class="modal fade" id="addWorkItemModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title fw-700"><i class="fas fa-plus-circle me-2"></i>إضافة عنصر جديد</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{% url 'dashboard:workitem_create' %}">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label fw-700">نوع العمل التابع له <span class="text-danger">*</span></label>
+            <select name="work_type" id="modalWorkTypeSelect" class="form-select" required>
+              <option value="">-- اختر نوع العمل --</option>
+              {% for wt in work_types %}
+              <option value="{{ wt.id }}">{{ wt.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-700">اسم العنصر <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control" placeholder="مثال: الشبكات، المفاتيح، المحابس..." required />
+          </div>
+
+          <div class="form-check form-switch mt-3">
+            <input class="form-check-input" type="checkbox" name="is_active" id="modalIsActive" checked />
+            <label class="form-check-label fw-600" for="modalIsActive">تفعيل العنصر للظهور فوراً للموظفين</label>
+          </div>
+        </div>
+        <div class="modal-footer bg-light rounded-bottom-4">
+          <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">إلغاء</button>
+          <button type="submit" class="btn btn-primary-custom rounded-pill px-4">حفظ العنصر</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Activity (WorkActivity) -->
+<div class="modal fade" id="addWorkActivityModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header bg-success text-white rounded-top-4">
+        <h5 class="modal-title fw-700"><i class="fas fa-plus-circle me-2"></i>إضافة نشاط جديد</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{% url 'dashboard:workactivity_create' %}">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label fw-700">العنصر التابع له <span class="text-danger">*</span></label>
+            <select name="element" id="modalElementSelect" class="form-select" required>
+              <option value="">-- اختر العنصر --</option>
+              {% for wt in work_types %}
+                {% for item in wt.details.all %}
+                <option value="{{ item.id }}">{{ wt.name }} ➔ {{ item.name }}</option>
+                {% endfor %}
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-700">اسم النشاط <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control" placeholder="مثال: استبدال لمبة، صيانة صنبور..." required />
+          </div>
+
+          <div class="form-check form-switch mt-3">
+            <input class="form-check-input" type="checkbox" name="is_active" id="modalActIsActive" checked />
+            <label class="form-check-label fw-600" for="modalActIsActive">تفعيل النشاط للظهور فوراً للموظفين</label>
+          </div>
+        </div>
+        <div class="modal-footer bg-light rounded-bottom-4">
+          <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">إلغاء</button>
+          <button type="submit" class="btn btn-success rounded-pill px-4">حفظ النشاط</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openAddModalForWorkType(workTypeId) {
+  const select = document.getElementById('modalWorkTypeSelect');
+  if (select) {
+    select.value = workTypeId;
+  }
+  const modal = new bootstrap.Modal(document.getElementById('addWorkItemModal'));
+  modal.show();
+}
+
+function openAddActivityModal(elementId, elementName) {
+  const select = document.getElementById('modalElementSelect');
+  if (select) {
+    select.value = elementId;
+  }
+  const modal = new bootstrap.Modal(document.getElementById('addWorkActivityModal'));
+  modal.show();
+}
+</script>
+{% endblock %}

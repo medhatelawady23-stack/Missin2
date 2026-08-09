@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}{% if object %}تعديل نشاط{% else %}إضافة نشاط{% endif %} - لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 700px">
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <h1 class="section-title mb-0">
+      <i class="fas fa-tasks me-2 text-primary"></i>
+      {% if object %}تعديل نشاط{% else %}إضافة نشاط جديد{% endif %}
+    </h1>
+    <a href="{% url 'dashboard:worktype_list' %}" class="btn btn-outline-secondary rounded-pill">
+      <i class="fas fa-arrow-right me-1"></i>الرجوع للقائمة
+    </a>
+  </div>
+
+  <div class="card-modern p-4">
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label fw-700">العنصر التابع له <span class="text-danger">*</span></label>
+        <select name="element" class="form-select" required>
+          <option value="">-- اختر العنصر --</option>
+          {% for elem in form.fields.element.queryset %}
+          <option value="{{ elem.id }}" {% if form.element.value == elem.id %}selected{% endif %}>
+            {{ elem.work_type.name }} ➔ {{ elem.name }}
+          </option>
+          {% endfor %}
+        </select>
+        {% if form.element.errors %}
+        <div class="text-danger small mt-1">{{ form.element.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-700">اسم النشاط <span class="text-danger">*</span></label>
+        <input type="text" name="name" value="{{ form.name.value|default:'' }}" class="form-control" placeholder="مثال: استبدال كشاف، صيانة لمبة..." required />
+        {% if form.name.errors %}
+        <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="mb-4 form-check form-switch">
+        <input class="form-check-input" type="checkbox" name="is_active" id="is_active" {% if form.is_active.value or not object %}checked{% endif %} />
+        <label class="form-check-label fw-600" for="is_active">نشاط فعّال (يظهر في قوائم الأنشطة للموظفين)</label>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary-custom flex-grow-1">
+          <i class="fas fa-save me-1"></i>حفظ النشاط
+        </button>
+        <a href="{% url 'dashboard:worktype_list' %}" class="btn btn-light">إلغاء</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
