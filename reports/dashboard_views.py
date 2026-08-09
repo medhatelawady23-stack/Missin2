@@ -1287,7 +1287,14 @@ class ExportPDFView(StaffRequiredMixin, View):
 
         # Register Arabic Font
         font_name = 'Helvetica'
-        for candidate in ['C:/Windows/Fonts/arial.ttf', 'C:/Windows/Fonts/tahoma.ttf', 'C:/Windows/Fonts/segoeui.ttf']:
+        from django.conf import settings
+        font_candidates = [
+            os.path.join(settings.BASE_DIR, 'static', 'fonts', 'Amiri-Regular.ttf'),
+            'C:/Windows/Fonts/arial.ttf',
+            'C:/Windows/Fonts/tahoma.ttf',
+            'C:/Windows/Fonts/segoeui.ttf'
+        ]
+        for candidate in font_candidates:
             if os.path.exists(candidate):
                 try:
                     pdfmetrics.registerFont(TTFont('ArabicFont', candidate))
@@ -1532,7 +1539,14 @@ class BulkExportPDFView(View):
             return text_str
 
         font_name = 'Helvetica'
-        for candidate in ['C:/Windows/Fonts/arial.ttf', 'C:/Windows/Fonts/tahoma.ttf', 'C:/Windows/Fonts/segoeui.ttf']:
+        from django.conf import settings
+        font_candidates = [
+            os.path.join(settings.BASE_DIR, 'static', 'fonts', 'Amiri-Regular.ttf'),
+            'C:/Windows/Fonts/arial.ttf',
+            'C:/Windows/Fonts/tahoma.ttf',
+            'C:/Windows/Fonts/segoeui.ttf'
+        ]
+        for candidate in font_candidates:
             if os.path.exists(candidate):
                 try:
                     pdfmetrics.registerFont(TTFont('ArabicFontBulk', candidate))
