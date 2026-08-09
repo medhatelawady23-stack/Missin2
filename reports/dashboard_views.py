@@ -321,6 +321,12 @@ class ContractorUserForm(forms.ModelForm):
 
 # ─── نموذج إدارة المراقبين ──────────────────────────────────────────────
 class SupervisorUserForm(forms.ModelForm):
+    unit = forms.ModelChoiceField(
+        queryset=Unit.objects.filter(is_active=True),
+        required=False,
+        label='وحدة التنسيق التابعة للمراقب',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'كلمة المرور'}),
         required=False,
@@ -339,6 +345,13 @@ class SupervisorUserForm(forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            profile = getattr(self.instance, 'profile', None)
+            if profile:
+                self.fields['unit'].initial = profile.unit
+
     def save(self, commit=True):
         user = super().save(commit=commit)
         password = self.cleaned_data.get('password')
@@ -347,8 +360,9 @@ class SupervisorUserForm(forms.ModelForm):
             if commit:
                 user.save()
 
+        unit = self.cleaned_data.get('unit')
         profile, _ = UserProfile.objects.get_or_create(user=user)
-        profile.unit = None
+        profile.unit = unit
         profile.role = 'supervisor'
         profile.save()
         return user
