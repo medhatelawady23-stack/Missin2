@@ -1231,8 +1231,7 @@
 
       if (res.success) {
         sessionStorage.removeItem("current_report_key");
-        alert("تم إرسال التقرير الميداني بنجاح برقم: " + res.report_number);
-        window.location.href = `/reports/${res.report_id}/`;
+        window.location.href = `/reports/${res.report_id}/success/`;
       } else {
         alert("حدث خطأ: " + (res.error || "فشل إرسال التقرير"));
         submitBtn.disabled = false;

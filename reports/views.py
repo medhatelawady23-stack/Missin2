@@ -234,3 +234,17 @@ class ReportDetailView(LoginRequiredMixin, DetailView):
         if not self.request.user.is_staff:
             qs = qs.filter(user=self.request.user)
         return qs
+
+
+class ReportSuccessView(LoginRequiredMixin, DetailView):
+    model = Report
+    template_name = 'reports/success.html'
+    context_object_name = 'report'
+
+    def get_queryset(self):
+        """المستخدم يرى صفحة نجاح تقاريره فقط"""
+        qs = super().get_queryset()
+        if not self.request.user.is_staff:
+            qs = qs.filter(user=self.request.user)
+        return qs
+
