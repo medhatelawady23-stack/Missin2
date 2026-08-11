@@ -983,13 +983,15 @@ class ReportDeleteView(StaffRequiredMixin, DeleteView):
 
     def get_success_url(self):
         next_url = self.request.POST.get('next') or self.request.GET.get('next')
-        if next_url and 'delete' not in next_url:
+        pk_str = str(self.object.pk)
+        if next_url and 'delete' not in next_url and f"/{pk_str}/" not in next_url and f"/{pk_str}" not in next_url:
             return next_url
         return reverse_lazy('dashboard:report_list')
 
     def form_valid(self, form):
         messages.success(self.request, 'تم حذف التقرير بنجاح')
         return super().form_valid(form)
+
 
 
 RESTROOM_ACTIVITIES = [
