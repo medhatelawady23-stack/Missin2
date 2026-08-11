@@ -31,7 +31,7 @@
   }
 
   .success-header-bg {
-    background: linear-gradient(135deg, #1e8449 0%, #2ecc71 100%);
+    background: linear-gradient(135deg, #009999 0%, #33CCCC 100%);
     padding: 3rem 2rem 2.5rem;
     color: #ffffff;
     text-align: center;
@@ -66,7 +66,7 @@
     width: 72px;
     height: 72px;
     background: #ffffff;
-    color: #1e8449;
+    color: #009999;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -95,8 +95,8 @@
   }
 
   .report-number-box:hover {
-    border-color: #1e8449;
-    background: #f0fdf4;
+    border-color: #33CCCC;
+    background: #e6f9f9;
   }
 
   .info-badge {
@@ -126,20 +126,20 @@
   }
 
   .btn-action-accent {
-    background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);
+    background: linear-gradient(135deg, #009999 0%, #33CCCC 100%);
     color: #ffffff;
     font-weight: 700;
     border: none;
     border-radius: 14px;
     padding: 0.85rem 1.5rem;
     transition: all 0.25s ease;
-    box-shadow: 0 4px 15px rgba(243, 156, 18, 0.25);
+    box-shadow: 0 4px 15px rgba(51, 204, 204, 0.3);
   }
 
   .btn-action-accent:hover {
     color: #ffffff;
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(243, 156, 18, 0.35);
+    box-shadow: 0 8px 25px rgba(51, 204, 204, 0.45);
   }
 
   .btn-action-outline {
@@ -155,7 +155,7 @@
   .btn-action-outline:hover {
     background: #f8fafc;
     color: #1e293b;
-    border-color: #94a3b8;
+    border-color: #33CCCC;
     transform: translateY(-2px);
   }
 </style>
@@ -183,7 +183,7 @@
         <!-- Report Reference Number -->
         <div class="report-number-box text-center mb-4">
           <small class="text-muted fw-700 d-block mb-1">
-            <i class="fas fa-hashtag text-success me-1"></i>رقم المرجعية الموحد للتقرير
+            <i class="fas fa-hashtag me-1" style="color: #009999;"></i>رقم المرجعية الموحد للتقرير
           </small>
           <div class="d-flex align-items-center justify-content-center gap-2">
             <span class="fs-3 fw-800 text-dark" id="reportNumText">{{ report.report_number }}</span>
@@ -220,7 +220,7 @@
             </div>
             <div class="col-6 col-md-6 text-center text-md-start border-top pt-2">
               <span class="text-muted small d-block mb-1"><i class="fas fa-list-check text-primary me-1"></i>عدد الأنشطة الميدانية</span>
-              <span class="badge bg-success rounded-pill px-3 py-1 fs-6">{{ report.items.count }} عنصر</span>
+              <span class="badge text-white rounded-pill px-3 py-1 fs-6" style="background-color: #009999;">{{ report.items.count }} عنصر</span>
             </div>
           </div>
         </div>
@@ -273,11 +273,13 @@
       const copyBtnText = document.getElementById("copyBtnText");
       const copyIcon = document.getElementById("copyIcon");
       copyBtnText.innerText = "تم النسخ!";
-      copyIcon.className = "fas fa-check text-success me-1";
+      copyIcon.className = "fas fa-check me-1";
+      copyIcon.style.color = "#009999";
 
       setTimeout(() => {
         copyBtnText.innerText = "نسخ";
         copyIcon.className = "far fa-copy me-1";
+        copyIcon.style.color = "";
       }, 2000);
     });
   }
